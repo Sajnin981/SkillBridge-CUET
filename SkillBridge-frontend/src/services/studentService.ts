@@ -1,42 +1,57 @@
-import type { Applicant, StudentProfile } from '@/lib/types';
-
-function delay(ms = 300) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
+import { api, type ApiEnvelope, type BackendStudent } from '@/api/axios';
+import { mapStudentProfile } from '@/api/mappers';
+import type { StudentProfile } from '@/lib/types';
 
 export const studentService = {
   async getProfile(): Promise<StudentProfile | null> {
-    await delay();
-    return null;
+    const res = await api.get<ApiEnvelope<{ student: BackendStudent }>>('/student/profile');
+    return mapStudentProfile(res.data.data.student);
   },
 
-  async updateProfile(_data: Partial<StudentProfile>): Promise<StudentProfile> {
-    await delay();
-    return {} as StudentProfile;
+  async getRawProfile(): Promise<BackendStudent | null> {
+    const res = await api.get<ApiEnvelope<{ student: BackendStudent }>>('/student/profile');
+    return res.data.data.student;
+  },
+
+  async updateProfile(data: Partial<{
+    bio: string;
+    skills: string[];
+    avatarUrl: string;
+    education: BackendStudent['education'];
+    experience: BackendStudent['experience'];
+    certifications: BackendStudent['certifications'];
+    achievements: BackendStudent['achievements'];
+    portfolio: string[];
+  }>): Promise<StudentProfile> {
+    const res = await api.put<ApiEnvelope<{ student: BackendStudent }>>('/student/profile', data);
+    return mapStudentProfile(res.data.data.student);
+  },
+
+  async uploadResume(file: File): Promise<{ resumeUrl: string }> {
+    const formData = new FormData();
+    formData.append('resume', file);
+    const res = await api.post<ApiEnvelope<{ resumeUrl: string }>>('/student/resume', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return res.data.data;
+  },
+
+  async getSavedOpportunities() {
+    const res = await api.get<ApiEnvelope<{ items: unknown[] }>>('/student/saved-opportunities');
+    return res.data.data.items;
+  },
+
+  async saveOpportunity(opportunityId: string) {
+    const res = await api.post<ApiEnvelope>(`/student/saved-opportunities/${opportunityId}`);
+    return res.data;
+  },
+
+  async unsaveOpportunity(opportunityId: string) {
+    const res = await api.delete<ApiEnvelope>(`/student/saved-opportunities/${opportunityId}`);
+    return res.data;
   },
 
   async getAll(): Promise<{ id: string; name: string; avatar: string; email: string; department: string; cgpa: number; batch: string; status: string }[]> {
-    await delay();
     return [];
-  },
-};
-
-export const applicationService = {
-  async getApplications(): Promise<{ id: string; status: string; stage: string; date: string; opportunityId: string }[]> {
-    await delay();
-    return [];
-  },
-
-  async getApplicants(_opportunityId?: string): Promise<Applicant[]> {
-    await delay();
-    return [];
-  },
-
-  async shortlist(_id: string): Promise<void> {
-    await delay();
-  },
-
-  async reject(_id: string): Promise<void> {
-    await delay();
   },
 };

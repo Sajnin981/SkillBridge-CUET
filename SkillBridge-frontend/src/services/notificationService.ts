@@ -1,20 +1,33 @@
+import { api, type ApiEnvelope, type BackendNotification, type Pagination } from '@/api/axios';
+import { mapNotification } from '@/api/mappers';
 import type { Notification, Role } from '@/lib/types';
 
-function delay(ms = 300) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
+interface NotifList {
+  items: BackendNotification[];
+  unreadCount: number;
+  pagination: Pagination;
 }
 
 export const notificationService = {
   async getAll(_role: Role): Promise<Notification[]> {
-    await delay();
-    return [];
+    const res = await api.get<ApiEnvelope<NotifList>>('/notifications');
+    return res.data.data.items.map(mapNotification);
+  },
+
+  async getUnreadCount(): Promise<number> {
+    const res = await api.get<ApiEnvelope<NotifList>>('/notifications', { params: { unreadOnly: true, limit: 1 } });
+    return res.data.data.unreadCount;
+  },
+
+  async markRead(id: string): Promise<void> {
+    await api.patch<ApiEnvelope>(`/notifications/${id}/read`);
   },
 
   async markAllRead(): Promise<void> {
-    await delay(100);
+    await api.patch<ApiEnvelope>('/notifications/read-all');
   },
 
-  async toggleRead(_id: string): Promise<void> {
-    await delay(100);
+  async toggleRead(id: string): Promise<void> {
+    await this.markRead(id);
   },
 };

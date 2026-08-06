@@ -1,4 +1,7 @@
 import type { Role } from '@/lib/types';
+import { api, setAuthToken, clearAuthToken, type ApiEnvelope } from '@/api/axios';
+import type { BackendStudent, BackendCompany, BackendAdmin, BackendRole } from '@/api/types';
+import { mapStudent, mapStudentProfile, mapCompanyUser, mapAdmin } from '@/api/mappers';
 
 export interface AuthUser {
   id: string;
@@ -6,54 +9,121 @@ export interface AuthUser {
   email: string;
   avatar: string;
   role: Role;
+  status?: string;
 }
 
 const STORAGE_KEY = 'skillbridge_auth';
 
-function delay(ms = 400) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
+interface LoginResponse {
+  user: BackendStudent | BackendCompany | BackendAdmin;
+  token: string;
+  role: BackendRole;
+}
+
+function mapBackendUser(user: BackendStudent | BackendCompany | BackendAdmin, role: BackendRole): AuthUser {
+  if (role === 'student') return mapStudent(user as BackendStudent);
+  if (role === 'company') return mapCompanyUser(user as BackendCompany);
+  return mapAdmin(user as BackendAdmin);
 }
 
 export const authService = {
-  async login(email: string, _password: string, role: Role): Promise<AuthUser> {
-    await delay();
-    const names: Record<Role, string> = {
-      student: 'Rahim Ahmed',
-      company: 'Brain Station 23',
-      admin: 'Admin User',
-    };
-    const avatars: Record<Role, string> = {
-      student: 'RA',
-      company: 'BS',
-      admin: 'AD',
-    };
-    const user: AuthUser = {
-      id: Math.random().toString(36).slice(2),
-      name: names[role],
-      email,
-      avatar: avatars[role],
-      role,
-    };
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(user));
-    return user;
+  async login(email: string, password: string, role: Role): Promise<AuthUser> {
+    const res = await api.post<ApiEnvelope<LoginResponse>>('/auth/login', { email, password, role });
+    const { user, token, role: backendRole } = res.data.data;
+    setAuthToken(token);
+    const mapped = mapBackendUser(user, backendRole);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(mapped));
+    return mapped;
+  },
+
+  async registerStudent(data: {
+    fullName: string;
+    email: string;
+    studentId: string;
+    department: string;
+    batch: string;
+    phone: string;
+    password: string;
+    idCard: File;
+    resume?: File;
+  }): Promise<AuthUser> {
+    const formData = new FormData();
+    Object.entries(data).forEach(([key, value]) => {
+      if (value instanceof File) formData.append(key, value);
+      else if (value !== undefined && value !== null) formData.append(key, String(value));
+    });
+    const res = await api.post<ApiEnvelope<LoginResponse>>('/auth/student/register', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    const { user, token, role: backendRole } = res.data.data;
+    setAuthToken(token);
+    const mapped = mapBackendUser(user, backendRole);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(mapped));
+    return mapped;
+  },
+
+  async registerCompany(data: {
+    companyName: string;
+    hrName: string;
+    email: string;
+    phone: string;
+    website?: string;
+    industry: string;
+    address: string;
+    password: string;
+    tradeLicense: File;
+    logo?: File;
+  }): Promise<AuthUser> {
+    const formData = new FormData();
+    Object.entries(data).forEach(([key, value]) => {
+      if (value instanceof File) formData.append(key, value);
+      else if (value !== undefined && value !== null) formData.append(key, String(value));
+    });
+    const res = await api.post<ApiEnvelope<LoginResponse>>('/auth/company/register', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    const { user, token, role: backendRole } = res.data.data;
+    setAuthToken(token);
+    const mapped = mapBackendUser(user, backendRole);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(mapped));
+    return mapped;
   },
 
   async register(email: string, name: string, role: Role): Promise<AuthUser> {
-    await delay();
-    const avatars: Record<Role, string> = {
-      student: name.split(' ').map((p) => p[0]).slice(0, 2).join('').toUpperCase() || 'ST',
-      company: name.split(' ').map((p) => p[0]).slice(0, 2).join('').toUpperCase() || 'CO',
-      admin: 'AD',
-    };
-    const user: AuthUser = {
-      id: Math.random().toString(36).slice(2),
-      name,
+    if (role === 'student') {
+      return this.registerStudent({
+        fullName: name,
+        email,
+        studentId: 'TEMP-' + Date.now(),
+        department: 'Computer Science & Engineering',
+        batch: '2022',
+        phone: '',
+        password: 'temp-password',
+        idCard: new File([''], 'placeholder.txt', { type: 'text/plain' }),
+      });
+    }
+    return this.registerCompany({
+      companyName: name,
+      hrName: name,
       email,
-      avatar: avatars[role],
-      role,
-    };
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(user));
-    return user;
+      phone: '',
+      industry: 'Software',
+      address: '',
+      password: 'temp-password',
+      tradeLicense: new File([''], 'placeholder.txt', { type: 'text/plain' }),
+    });
+  },
+
+  async getMe(): Promise<AuthUser | null> {
+    try {
+      const res = await api.get<ApiEnvelope<{ user: BackendStudent | BackendCompany | BackendAdmin; role: BackendRole }>>('/auth/me');
+      const { user, role } = res.data.data;
+      const mapped = mapBackendUser(user, role);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(mapped));
+      return mapped;
+    } catch {
+      return null;
+    }
   },
 
   getCurrentUser(): AuthUser | null {
@@ -66,6 +136,7 @@ export const authService = {
   },
 
   logout(): void {
+    clearAuthToken();
     localStorage.removeItem(STORAGE_KEY);
   },
 
@@ -73,3 +144,5 @@ export const authService = {
     return `/${role}`;
   },
 };
+
+export { mapStudentProfile };
