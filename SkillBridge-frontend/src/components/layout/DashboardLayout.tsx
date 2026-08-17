@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from 'react';
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
-import { GraduationCap, Menu, X, Search, LayoutDashboard, User, Briefcase, Bookmark, FileText, Sparkles, Bell, Settings, Building2, Users, ShieldCheck, FileBarChart, BarChart3, MessageSquare, Award, FolderGit2, FileUp, LogOut } from 'lucide-react';
+import { GraduationCap, Menu, X, Search, LayoutDashboard, User, Briefcase, Bookmark, FileText, Sparkles, Bell, Settings, Building2, Users, ShieldCheck, ChartBar as FileBarChart, ChartBar as BarChart3, MessageSquare, Award, FolderGit2, FileUp, LogOut } from 'lucide-react';
 import { NotificationDropdown, UserAvatarMenu } from './NotificationDropdown';
 import { useAuth } from '@/context/AuthContext';
 import { cn } from '@/lib/utils';
@@ -15,7 +15,6 @@ const studentNav: NavItem[] = [
   { to: '/student', label: 'Dashboard', icon: LayoutDashboard },
   { to: '/student/opportunities', label: 'Browse Opportunities', icon: Briefcase },
   { to: '/student/recommendations', label: 'AI Recommendations', icon: Award },
-  { to: '/student/ai-resume', label: 'AI Resume', icon: Sparkles },
   { to: '/student/applied', label: 'Applied', icon: FileText },
   { to: '/student/saved', label: 'Saved', icon: Bookmark },
   { to: '/student/messages', label: 'Messages', icon: MessageSquare },
@@ -40,13 +39,7 @@ const companyNav: NavItem[] = [
 const adminNav: NavItem[] = [
   { to: '/admin', label: 'Dashboard', icon: LayoutDashboard },
   { to: '/admin/verifications', label: 'Verifications', icon: ShieldCheck },
-  { to: '/admin/students', label: 'Students', icon: User },
   { to: '/admin/companies', label: 'Companies', icon: Building2 },
-  { to: '/admin/opportunities', label: 'Opportunities', icon: Briefcase },
-  { to: '/admin/reports', label: 'Reports', icon: FileBarChart },
-  { to: '/admin/analytics', label: 'Analytics', icon: BarChart3 },
-  { to: '/admin/ai-logs', label: 'AI Logs', icon: Sparkles },
-  { to: '/admin/settings', label: 'Settings', icon: Settings },
 ];
 
 const navByRole: Record<string, NavItem[]> = {

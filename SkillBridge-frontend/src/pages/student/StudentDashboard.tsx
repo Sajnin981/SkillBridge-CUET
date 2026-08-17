@@ -17,7 +17,7 @@ import type { Opportunity, Notification } from '@/lib/types';
 
 const quickActions = [
   { label: 'Browse Opportunities', icon: Briefcase, to: '/student/opportunities', tone: 'bg-brand-50 text-brand-600' },
-  { label: 'AI Resume Analysis', icon: Sparkles, to: '/student/ai-resume', tone: 'bg-accent-50 text-accent-600' },
+  { label: 'Resume Builder', icon: Upload, to: '/student/resume', tone: 'bg-accent-50 text-accent-600' },
   { label: 'Edit Profile', icon: TrendingUp, to: '/student/profile', tone: 'bg-success-50 text-success-600' },
   { label: 'View Applications', icon: FileText, to: '/student/applied', tone: 'bg-warning-50 text-warning-600' },
 ];

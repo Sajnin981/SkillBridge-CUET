@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { ArrowLeft, MapPin, Clock, Briefcase, Users, CheckCircle2, Bookmark, Share2, ExternalLink, Calendar, DollarSign } from 'lucide-react';
+import { ArrowLeft, MapPin, Clock, Briefcase, Users, CircleCheck as CheckCircle2, Bookmark, Share2, ExternalLink, Calendar, DollarSign } from 'lucide-react';
 import { PageContainer } from '@/components/layout/DashboardLayout';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
@@ -11,6 +11,8 @@ import { SkillTags } from '@/components/shared/SkillTags';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { useToast } from '@/components/ui/Toast';
 import { opportunityService } from '@/services/opportunityService';
+import { applicationService } from '@/services/applicationService';
+import { studentService } from '@/services/studentService';
 import type { Opportunity } from '@/lib/types';
 import { daysLeft, timeAgo } from '@/lib/utils';
 
@@ -25,11 +27,24 @@ export default function OpportunityDetailsPage() {
   const [applyOpen, setApplyOpen] = useState(false);
   const [saved, setSaved] = useState(false);
   const [applied, setApplied] = useState(false);
+  const [applying, setApplying] = useState(false);
+  const [togglingSave, setTogglingSave] = useState(false);
+  const [coverLetter, setCoverLetter] = useState('');
   const [opportunity, setOpportunity] = useState<Opportunity | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (id) opportunityService.getById(id).then((o) => { setOpportunity(o); setLoading(false); });
+    if (!id) return;
+    opportunityService.getById(id).then((o) => {
+      setOpportunity(o);
+      setLoading(false);
+      studentService.getSavedOpportunities().then((savedIds) => {
+        setSaved(savedIds.some((sid: string) => sid === id));
+      }).catch(() => {});
+      applicationService.getApplications().then((apps) => {
+        setApplied(apps.some((a) => a.opportunityId === id));
+      }).catch(() => {});
+    }).catch(() => setLoading(false));
   }, [id]);
 
   if (loading) return <PageContainer><div className="py-20 text-center text-sm text-ink-400">Loading opportunity…</div></PageContainer>;
@@ -44,11 +59,37 @@ export default function OpportunityDetailsPage() {
 
   const tone = typeTones[opportunity.type] ?? 'neutral';
 
-  const submitApplication = (e: React.FormEvent) => {
-    e.preventDefault();
-    setApplied(true);
-    setApplyOpen(false);
-    toast({ title: 'Application submitted!', description: `${opportunity.company} will review your application.`, variant: 'success' });
+  const submitApplication = () => {
+    if (!id) return;
+    setApplying(true);
+    applicationService.apply(id, { coverLetter }).then(() => {
+      setApplied(true);
+      setApplying(false);
+      setApplyOpen(false);
+      setCoverLetter('');
+      toast({ title: 'Application submitted!', description: `${opportunity.company} will review your application.`, variant: 'success' });
+    }).catch(() => {
+      setApplying(false);
+      toast({ title: 'Failed to submit application', variant: 'error' });
+    });
+  };
+
+  const toggleSave = () => {
+    if (!id) return;
+    setTogglingSave(true);
+    if (saved) {
+      studentService.unsaveOpportunity(id).then(() => {
+        setSaved(false);
+        setTogglingSave(false);
+        toast({ title: 'Removed from saved', variant: 'info' });
+      }).catch(() => setTogglingSave(false));
+    } else {
+      studentService.saveOpportunity(id).then(() => {
+        setSaved(true);
+        setTogglingSave(false);
+        toast({ title: 'Saved!', variant: 'success' });
+      }).catch(() => setTogglingSave(false));
+    }
   };
 
   return (
@@ -85,36 +126,44 @@ export default function OpportunityDetailsPage() {
               <p className="mt-2 text-sm leading-relaxed text-ink-600">{opportunity.description}</p>
             </div>
 
-            <div className="mt-6 border-t border-ink-100 pt-6">
-              <h3 className="text-base font-semibold text-ink-800">Responsibilities</h3>
-              <ul className="mt-3 space-y-2">
-                {opportunity.responsibilities.map((r) => (
-                  <li key={r} className="flex items-start gap-2.5 text-sm text-ink-600">
-                    <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-brand-500" />{r}
-                  </li>
-                ))}
-              </ul>
-            </div>
+            {opportunity.responsibilities.length > 0 && (
+              <div className="mt-6 border-t border-ink-100 pt-6">
+                <h3 className="text-base font-semibold text-ink-800">Responsibilities</h3>
+                <ul className="mt-3 space-y-2">
+                  {opportunity.responsibilities.map((r) => (
+                    <li key={r} className="flex items-start gap-2.5 text-sm text-ink-600">
+                      <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-brand-500" />{r}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
 
-            <div className="mt-6 border-t border-ink-100 pt-6">
-              <h3 className="text-base font-semibold text-ink-800">Requirements</h3>
-              <ul className="mt-3 space-y-2">
-                {opportunity.requirements.map((r) => (
-                  <li key={r} className="flex items-start gap-2.5 text-sm text-ink-600">
-                    <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-accent-500" />{r}
-                  </li>
-                ))}
-              </ul>
-            </div>
+            {opportunity.requirements.length > 0 && (
+              <div className="mt-6 border-t border-ink-100 pt-6">
+                <h3 className="text-base font-semibold text-ink-800">Requirements</h3>
+                <ul className="mt-3 space-y-2">
+                  {opportunity.requirements.map((r) => (
+                    <li key={r} className="flex items-start gap-2.5 text-sm text-ink-600">
+                      <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-accent-500" />{r}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
 
-            <div className="mt-6 border-t border-ink-100 pt-6">
-              <h3 className="mb-3 text-base font-semibold text-ink-800">Required Skills</h3>
-              <SkillTags skills={opportunity.skills} />
-            </div>
+            {opportunity.skills.length > 0 && (
+              <div className="mt-6 border-t border-ink-100 pt-6">
+                <h3 className="mb-3 text-base font-semibold text-ink-800">Required Skills</h3>
+                <SkillTags skills={opportunity.skills} />
+              </div>
+            )}
 
-            <div className="mt-6 flex flex-wrap gap-1.5">
-              {opportunity.tags.map((t) => <Badge key={t} tone="neutral">{t}</Badge>)}
-            </div>
+            {opportunity.tags.length > 0 && (
+              <div className="mt-6 flex flex-wrap gap-1.5">
+                {opportunity.tags.map((t) => <Badge key={t} tone="neutral">{t}</Badge>)}
+              </div>
+            )}
           </div>
         </div>
 
@@ -128,7 +177,7 @@ export default function OpportunityDetailsPage() {
               ) : (
                 <Button className="w-full" onClick={() => setApplyOpen(true)}>Apply Now</Button>
               )}
-              <Button variant="outline" className="w-full" onClick={() => { setSaved(!saved); toast({ title: saved ? 'Removed from saved' : 'Saved!', variant: 'info' }); }}>
+              <Button variant="outline" className="w-full" onClick={toggleSave} disabled={togglingSave}>
                 <Bookmark className={`h-4 w-4 ${saved ? 'fill-brand-600 text-brand-600' : ''}`} />{saved ? 'Saved' : 'Save for later'}
               </Button>
               <Button variant="ghost" className="w-full"><Share2 className="h-4 w-4" />Share</Button>
@@ -150,14 +199,14 @@ export default function OpportunityDetailsPage() {
             </div>
             <div className="mt-3 space-y-2 text-sm text-ink-500">
               <p className="flex items-center gap-2"><MapPin className="h-4 w-4" />{opportunity.location}</p>
-              <p className="flex items-center gap-2"><ExternalLink className="h-4 w-4" />View company profile</p>
+              <Link to={`/student/companies/${opportunity.companyId}`} className="flex items-center gap-2 text-brand-600 hover:underline"><ExternalLink className="h-4 w-4" />View company profile</Link>
             </div>
           </div>
         </div>
       </div>
 
       <Modal open={applyOpen} onClose={() => setApplyOpen(false)} title="Apply to this opportunity" description={`${opportunity.title} at ${opportunity.company}`} size="md"
-        footer={<><Button variant="outline" onClick={() => setApplyOpen(false)}>Cancel</Button><Button onClick={submitApplication}>Submit Application</Button></>}>
+        footer={<><Button variant="outline" onClick={() => setApplyOpen(false)}>Cancel</Button><Button onClick={submitApplication} disabled={applying}>{applying ? 'Submitting…' : 'Submit Application'}</Button></>}>
         <div className="space-y-4">
           <div className="rounded-xl bg-brand-50 p-4">
             <p className="text-sm font-medium text-brand-700">Your profile will be shared</p>
@@ -169,7 +218,7 @@ export default function OpportunityDetailsPage() {
           </div>
           <div>
             <label className="label">Cover letter (optional)</label>
-            <textarea className="input min-h-[120px] resize-y" placeholder="Tell the company why you're a great fit…" />
+            <textarea className="input min-h-[120px] resize-y" placeholder="Tell the company why you're a great fit…" value={coverLetter} onChange={(e) => setCoverLetter(e.target.value)} />
           </div>
         </div>
       </Modal>

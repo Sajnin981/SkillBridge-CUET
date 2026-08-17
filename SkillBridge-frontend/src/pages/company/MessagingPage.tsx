@@ -1,22 +1,49 @@
+import { useEffect, useState } from 'react';
 import { MessagingView } from '@/components/shared/MessagingView';
+import { SkeletonCard } from '@/components/ui/Skeleton';
+import { useAuth } from '@/context/AuthContext';
+import { messageService } from '@/services/messageService';
 
-const conversations = [
-  { id: '1', name: 'Sadia Islam', avatar: 'SI', role: 'ML Research Applicant', last: 'Hi, I wanted to ask about the interview…', time: '2m', unread: 2, online: true },
-  { id: '2', name: 'Rahim Ahmed', avatar: 'RA', role: 'Frontend Engineer Applicant', last: 'Thank you for the opportunity!', time: '1h', unread: 0, online: true },
-  { id: '3', name: 'Nusrat Jahan', avatar: 'NJ', role: 'UI/UX Design Applicant', last: 'I have attached my portfolio.', time: '3h', unread: 1, online: false },
-  { id: '4', name: 'Maliha Chowdhury', avatar: 'MC', role: 'Full-stack Applicant', last: 'Looking forward to the interview.', time: '1d', unread: 0, online: false },
-];
+interface Conversation {
+  id: string;
+  name: string;
+  avatar: string;
+  role: string;
+  last: string;
+  time: string;
+  unread: number;
+  online: boolean;
+}
 
-const messagesByConv: Record<string, { id: string; from: 'me' | 'them'; text: string; time: string }[]> = {
-  '1': [
-    { id: 'm1', from: 'them', text: 'Hi! Thank you for reviewing my application. I wanted to ask about the interview schedule.', time: '10:30 AM' },
-    { id: 'm2', from: 'me', text: 'Hi Sadia! Thanks for reaching out. We\'d like to schedule an interview for this Thursday at 2 PM. Does that work for you?', time: '10:32 AM' },
-    { id: 'm3', from: 'them', text: 'Yes, that works perfectly! Should I prepare anything specific?', time: '10:33 AM' },
-    { id: 'm4', from: 'me', text: 'Just be ready to discuss your ML projects and a small coding problem. We\'ll send a Google Meet link.', time: '10:35 AM' },
-  ],
-};
+interface Message {
+  id: string;
+  from: 'me' | 'them';
+  text: string;
+  time: string;
+}
 
 export default function MessagingPage() {
+  const { user } = useAuth();
+  const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [messagesByConv, setMessagesByConv] = useState<Record<string, Message[]>>({});
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!user) return;
+    messageService.getConversations(user.role).then(async (convs) => {
+      setConversations(convs as Conversation[]);
+      const msgMap: Record<string, Message[]> = {};
+      await Promise.all(convs.map(async (c) => {
+        const msgs = await messageService.getMessages(c.id);
+        msgMap[c.id] = msgs as Message[];
+      }));
+      setMessagesByConv(msgMap);
+      setLoading(false);
+    }).catch(() => setLoading(false));
+  }, [user]);
+
+  if (loading) return <SkeletonCard />;
+
   return (
     <MessagingView
       title="Messages"

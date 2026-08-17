@@ -1,18 +1,49 @@
+import { useEffect, useState } from 'react';
 import { MessagingView } from '@/components/shared/MessagingView';
+import { SkeletonCard } from '@/components/ui/Skeleton';
+import { useAuth } from '@/context/AuthContext';
+import { messageService } from '@/services/messageService';
 
-const conversations = [
-  { id: '1', name: 'Brain Station 23', avatar: 'BS', role: 'Recruiter', last: 'Hi Rahim, we liked your profile!', time: '5m', unread: 1, online: true },
-  { id: '2', name: 'Pathao', avatar: 'PA', role: 'Recruiter', last: 'Your interview is scheduled for Thursday.', time: '2h', unread: 0, online: false },
-];
+interface Conversation {
+  id: string;
+  name: string;
+  avatar: string;
+  role: string;
+  last: string;
+  time: string;
+  unread: number;
+  online: boolean;
+}
 
-const messagesByConv: Record<string, { id: string; from: 'me' | 'them'; text: string; time: string }[]> = {
-  '1': [
-    { id: 'm1', from: 'them', text: 'Hi Rahim, we liked your profile! Would you be interested in the Frontend Engineer Intern role?', time: '9:00 AM' },
-    { id: 'm2', from: 'me', text: 'Hi! Yes, absolutely. I\'d love to learn more about the role.', time: '9:05 AM' },
-  ],
-};
+interface Message {
+  id: string;
+  from: 'me' | 'them';
+  text: string;
+  time: string;
+}
 
 export default function StudentMessagingPage() {
+  const { user } = useAuth();
+  const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [messagesByConv, setMessagesByConv] = useState<Record<string, Message[]>>({});
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!user) return;
+    messageService.getConversations(user.role).then(async (convs) => {
+      setConversations(convs as Conversation[]);
+      const msgMap: Record<string, Message[]> = {};
+      await Promise.all(convs.map(async (c) => {
+        const msgs = await messageService.getMessages(c.id);
+        msgMap[c.id] = msgs as Message[];
+      }));
+      setMessagesByConv(msgMap);
+      setLoading(false);
+    }).catch(() => setLoading(false));
+  }, [user]);
+
+  if (loading) return <SkeletonCard />;
+
   return (
     <MessagingView
       title="Messages"

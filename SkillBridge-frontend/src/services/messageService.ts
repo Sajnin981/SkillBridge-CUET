@@ -1,15 +1,11 @@
 import { api, type ApiEnvelope, type BackendConversation, type BackendMessage, type Pagination } from '@/api/axios';
 import { mapConversation, mapMessage } from '@/api/mappers';
-import type { Notification, Role } from '@/lib/types';
+import type { Role } from '@/lib/types';
 
 interface ConvList { items: BackendConversation[] }
 interface MsgList { items: BackendMessage[]; pagination: Pagination }
 
 export const messageService = {
-  async getNotifications(_role: Role): Promise<Notification[]> {
-    return [];
-  },
-
   async getConversations(_role: Role): Promise<{ id: string; name: string; avatar: string; role: string; last: string; time: string; unread: number; online: boolean }[]> {
     const res = await api.get<ApiEnvelope<ConvList>>('/messages/conversations');
     return res.data.data.items.map(mapConversation);

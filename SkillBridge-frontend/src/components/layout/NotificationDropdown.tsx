@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Bell, CheckCircle2, MessageSquare, Briefcase, Info, X, LogOut } from 'lucide-react';
+import { Bell, CircleCheck as CheckCircle2, MessageSquare, Briefcase, Info, X, LogOut } from 'lucide-react';
 import { Avatar } from '@/components/ui/Avatar';
-import { messageService } from '@/services/messageService';
+import { notificationService } from '@/services/notificationService';
 import { timeAgo } from '@/lib/utils';
 import type { Notification, Role } from '@/lib/types';
 
@@ -31,7 +31,7 @@ export function NotificationDropdown({ role }: NotificationDropdownProps) {
   const unread = items.filter((n) => !n.read).length;
 
   useEffect(() => {
-    messageService.getNotifications(role).then(setItems);
+    notificationService.getAll(role).then(setItems);
   }, [role]);
 
   useEffect(() => {
@@ -42,7 +42,10 @@ export function NotificationDropdown({ role }: NotificationDropdownProps) {
     return () => document.removeEventListener('mousedown', onClick);
   }, []);
 
-  const markAllRead = () => setItems((prev) => prev.map((n) => ({ ...n, read: true })));
+  const markAllRead = () => {
+    setItems((prev) => prev.map((n) => ({ ...n, read: true })));
+    notificationService.markAllRead();
+  };
 
   return (
     <div className="relative" ref={ref}>

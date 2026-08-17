@@ -57,16 +57,19 @@ export const companyService = {
     return res.data.data;
   },
 
-  async getAll(): Promise<Company[]> {
-    return [];
+  async getAll(params?: { status?: string; search?: string; page?: number; limit?: number }): Promise<Company[]> {
+    const res = await api.get<ApiEnvelope<{ items: BackendCompany[]; pagination: Pagination }>>('/admin/users', { params: { role: 'company', ...params } });
+    return res.data.data.items.map(mapCompany);
   },
 
   async getVerified(): Promise<Company[]> {
-    return [];
+    const res = await api.get<ApiEnvelope<{ items: BackendCompany[]; pagination: Pagination }>>('/admin/users', { params: { role: 'company', status: 'approved', limit: 100 } });
+    return res.data.data.items.map(mapCompany);
   },
 
-  async getById(_id: string): Promise<Company | null> {
-    return null;
+  async getById(id: string): Promise<Company | null> {
+    const res = await api.get<ApiEnvelope<{ role: string; item: BackendCompany }>>('/admin/users/company/' + id);
+    return mapCompany(res.data.data.item);
   },
 
   async getPending(): Promise<Company[]> {

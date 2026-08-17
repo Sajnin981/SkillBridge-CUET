@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Users, Building2, Briefcase, ShieldCheck, ArrowRight, Clock, TrendingUp, AlertTriangle, Sparkles, CheckCircle2 } from 'lucide-react';
+import { Users, Building2, Briefcase, ShieldCheck, ArrowRight, Clock, TrendingUp, TriangleAlert as AlertTriangle, Sparkles, CircleCheck as CheckCircle2 } from 'lucide-react';
 import { PageContainer } from '@/components/layout/DashboardLayout';
 import { StatCard } from '@/components/shared/StatCard';
 import { Card, CardHeader } from '@/components/ui/Card';
@@ -79,7 +79,7 @@ export default function AdminDashboard() {
 
           <Card>
             <CardHeader title="AI Activity" action={<Badge tone="brand"><Sparkles className="h-3 w-3" />AI</Badge>} />
-            <Link to="/admin/ai-logs"><Button variant="ghost" size="sm" className="w-full">View AI logs <ArrowRight className="h-3.5 w-3.5" /></Button></Link>
+            <p className="px-4 pb-4 text-sm text-ink-500">AI features are running in placeholder mode. Logs are recorded for auditing.</p>
           </Card>
         </div>
       </div>

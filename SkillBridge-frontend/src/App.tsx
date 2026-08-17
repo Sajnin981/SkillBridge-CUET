@@ -25,7 +25,6 @@ import OpportunityDetailsPage from '@/pages/student/OpportunityDetailsPage';
 import StudentProfilePage from '@/pages/student/StudentProfilePage';
 import AppliedOpportunitiesPage from '@/pages/student/AppliedOpportunitiesPage';
 import SavedOpportunitiesPage from '@/pages/student/SavedOpportunitiesPage';
-import AIResumeAnalysisPage from '@/pages/student/AIResumeAnalysisPage';
 import AIRecommendationsPage from '@/pages/student/AIRecommendationsPage';
 import NotificationsPage from '@/pages/student/NotificationsPage';
 import SettingsPage from '@/pages/student/SettingsPage';
@@ -43,14 +42,8 @@ import CompanySettingsPage from '@/pages/company/CompanySettingsPage';
 import CompanyAnalyticsPage from '@/pages/company/CompanyAnalyticsPage';
 
 import AdminDashboard from '@/pages/admin/AdminDashboard';
-import AdminStudentsPage from '@/pages/admin/AdminStudentsPage';
 import AdminCompaniesPage from '@/pages/admin/AdminCompaniesPage';
 import AdminVerificationsPage from '@/pages/admin/AdminVerificationsPage';
-import AdminOpportunitiesPage from '@/pages/admin/AdminOpportunitiesPage';
-import AdminReportsPage from '@/pages/admin/AdminReportsPage';
-import AdminAnalyticsPage from '@/pages/admin/AdminAnalyticsPage';
-import AdminAILogsPage from '@/pages/admin/AdminAILogsPage';
-import AdminSettingsPage from '@/pages/admin/AdminSettingsPage';
 
 export default function App() {
   return (
@@ -80,7 +73,6 @@ export default function App() {
               <Route path="opportunities/:id" element={<OpportunityDetailsPage />} />
               <Route path="applied" element={<AppliedOpportunitiesPage />} />
               <Route path="saved" element={<SavedOpportunitiesPage />} />
-              <Route path="ai-resume" element={<AIResumeAnalysisPage />} />
               <Route path="recommendations" element={<AIRecommendationsPage />} />
               <Route path="messages" element={<StudentMessagingPage />} />
               <Route path="notifications" element={<NotificationsPage />} />
@@ -106,13 +98,7 @@ export default function App() {
             <Route path="/admin" element={<ProtectedRoute role="admin"><DashboardLayout /></ProtectedRoute>}>
               <Route index element={<AdminDashboard />} />
               <Route path="verifications" element={<AdminVerificationsPage />} />
-              <Route path="students" element={<AdminStudentsPage />} />
               <Route path="companies" element={<AdminCompaniesPage />} />
-              <Route path="opportunities" element={<AdminOpportunitiesPage />} />
-              <Route path="reports" element={<AdminReportsPage />} />
-              <Route path="analytics" element={<AdminAnalyticsPage />} />
-              <Route path="ai-logs" element={<AdminAILogsPage />} />
-              <Route path="settings" element={<AdminSettingsPage />} />
             </Route>
 
             {/* 404 */}
