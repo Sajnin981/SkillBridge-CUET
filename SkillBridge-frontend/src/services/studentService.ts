@@ -52,6 +52,18 @@ export const studentService = {
   },
 
   async getAll(): Promise<{ id: string; name: string; avatar: string; email: string; department: string; cgpa: number; batch: string; status: string }[]> {
-    return [];
+    const res = await api.get<ApiEnvelope<{ items: BackendStudent[]; pagination: unknown }>>('/admin/users', {
+      params: { role: 'student' },
+    });
+    return (res.data.data.items || []).map((s) => ({
+      id: s._id,
+      name: s.fullName,
+      avatar: s.avatarUrl || s.fullName.slice(0, 2).toUpperCase(),
+      email: s.email,
+      department: s.department,
+      cgpa: 0,
+      batch: s.batch,
+      status: s.status,
+    }));
   },
 };
