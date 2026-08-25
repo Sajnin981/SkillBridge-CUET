@@ -9,6 +9,7 @@ import { useToast } from '@/components/ui/Toast';
 import { companyService } from '@/services/companyService';
 import { normalizeError } from '@/api/axios';
 import type { OpportunityType } from '@/lib/types';
+import type { BackendOpportunityType } from '@/api/types';
 
 const typeOptions: { label: OpportunityType; value: string }[] = [
   { label: 'Internship', value: 'internship' },
@@ -70,7 +71,7 @@ export default function PostOpportunityPage() {
     try {
       await companyService.createOpportunity({
         title: title.trim(),
-        type: type as any,
+        type: type as BackendOpportunityType,
         description: description.trim(),
         responsibilities,
         requirements,

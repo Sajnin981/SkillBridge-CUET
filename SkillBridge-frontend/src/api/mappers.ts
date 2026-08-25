@@ -56,7 +56,7 @@ export function mapCompany(c: BackendCompany): Company {
   return {
     id: c._id,
     name: c.companyName,
-    logo: c.logoUrl ? '' : c.companyName.slice(0, 2).toUpperCase(),
+    logo: c.logoUrl || c.companyName.slice(0, 2).toUpperCase(),
     industry: c.industry,
     location: c.address,
     website: c.website || '',

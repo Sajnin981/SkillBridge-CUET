@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Search, Users, Eye, CheckCircle2, XCircle, Sparkles, Award } from 'lucide-react';
+import { Users, Eye, CheckCircle2, XCircle, Sparkles } from 'lucide-react';
 import { PageContainer } from '@/components/layout/DashboardLayout';
 import { SearchBar } from '@/components/shared/SearchBar';
 import { Card } from '@/components/ui/Card';

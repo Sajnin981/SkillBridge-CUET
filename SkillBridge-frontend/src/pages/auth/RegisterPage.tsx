@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Mail, Lock, User, Eye, EyeOff, GraduationCap, Building2, Check, Upload, Phone, MapPin, Globe } from 'lucide-react';
+import { Mail, Lock, User, Eye, EyeOff, GraduationCap, Building2, Check, Phone, MapPin, Globe } from 'lucide-react';
 import { AuthLayout } from '@/components/layout/AuthLayout';
 import { Button } from '@/components/ui/Button';
 import { Field, Input, Select } from '@/components/ui/Input';
@@ -32,7 +32,7 @@ export default function RegisterPage() {
 
   // Company Form State
   const [companyName, setCompanyName] = useState('');
-  const [hrName, setHrName] = useState('');
+  const [hrName] = useState('');
   const [website, setWebsite] = useState('');
   const [industry, setIndustry] = useState('Software');
   const [address, setAddress] = useState('');

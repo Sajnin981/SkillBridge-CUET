@@ -4,6 +4,7 @@ import { PageContainer } from '@/components/layout/DashboardLayout';
 import { Card, CardHeader } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
+import { Field, Textarea } from '@/components/ui/Input';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { SkeletonCard } from '@/components/ui/Skeleton';
 import { useToast } from '@/components/ui/Toast';
@@ -15,11 +16,49 @@ export default function StudentResumePage() {
   const [profile, setProfile] = useState<StudentProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [draft, setDraft] = useState({ bio: '', skills: '', education: '', experience: '', certifications: '', achievements: '', portfolio: '' });
   const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    studentService.getProfile().then((p) => { setProfile(p); setLoading(false); }).catch(() => setLoading(false));
+    studentService.getProfile().then((p) => {
+      setProfile(p);
+      setDraft({
+        bio: p.bio,
+        skills: p.skills.map((s) => s.name).join(', '),
+        education: p.education.map((e) => [e.institution, e.degree, e.field, e.start, e.end].join(' | ')).join('\n'),
+        experience: p.experience.map((e) => [e.company, e.role, e.start, e.end, e.description].join(' | ')).join('\n'),
+        certifications: p.certifications.map((c) => [c.name, c.issuer, c.year].join(' | ')).join('\n'),
+        achievements: p.achievements.join('\n'),
+        portfolio: p.projects.map((p) => p.title).join('\n'),
+      });
+      setLoading(false);
+    }).catch(() => setLoading(false));
   }, []);
+
+  const updateDraft = (field: keyof typeof draft, value: string) => setDraft((current) => ({ ...current, [field]: value }));
+
+  const handleSave = () => {
+    setSaving(true);
+    const splitLines = (value: string) => value.split('\n').map((line) => line.trim()).filter(Boolean);
+    const splitFields = (value: string) => splitLines(value).map((line) => line.split('|').map((part) => part.trim()));
+    studentService.updateProfile({
+      bio: draft.bio,
+      skills: draft.skills.split(',').map((skill) => skill.trim()).filter(Boolean),
+      education: splitFields(draft.education).map(([institution = '', degree = '', field = '', startYear = '', endYear = '']) => ({ institution, degree, field, startYear, endYear })),
+      experience: splitFields(draft.experience).map(([company = '', position = '', startDate = '', endDate = '', description = '']) => ({ company, position, startDate, endDate, description })),
+      certifications: splitFields(draft.certifications).map(([name = '', issuer = '', date = '']) => ({ name, issuer, date })),
+      achievements: splitLines(draft.achievements).map((title) => ({ title })),
+      portfolio: splitLines(draft.portfolio),
+    }).then((updated) => {
+      setProfile(updated);
+      setSaving(false);
+      toast({ title: 'Resume details saved', variant: 'success' });
+    }).catch(() => {
+      setSaving(false);
+      toast({ title: 'Could not save resume details', description: 'Please check the fields and try again.', variant: 'error' });
+    });
+  };
 
   const handleUpload = () => {
     fileRef.current?.click();
@@ -52,6 +91,20 @@ export default function StudentResumePage() {
 
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="lg:col-span-2 space-y-6">
+          <Card>
+            <CardHeader title="Edit Resume Details" subtitle="These supported profile fields are saved to your student account." action={<Button size="sm" onClick={handleSave} disabled={saving}>{saving ? 'Saving…' : 'Save details'}</Button>} />
+            <div className="space-y-4">
+              <Field label="Professional summary"><Textarea value={draft.bio} onChange={(e) => updateDraft('bio', e.target.value)} placeholder="A concise summary of your background and goals" /></Field>
+              <Field label="Skills" hint="Separate skills with commas"><Textarea value={draft.skills} onChange={(e) => updateDraft('skills', e.target.value)} placeholder="React, Node.js, MongoDB" /></Field>
+              <Field label="Education" hint="One entry per line: institution | degree | field | start year | end year"><Textarea value={draft.education} onChange={(e) => updateDraft('education', e.target.value)} placeholder="CUET | B.Sc. | Computer Science | 2022 | 2026" /></Field>
+              <Field label="Experience" hint="One entry per line: company | role | start | end | description"><Textarea value={draft.experience} onChange={(e) => updateDraft('experience', e.target.value)} placeholder="Company | Intern | 2025 | 2025 | Built ..." /></Field>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <Field label="Certifications" hint="One per line: name | issuer | date"><Textarea value={draft.certifications} onChange={(e) => updateDraft('certifications', e.target.value)} placeholder="AWS Cloud Practitioner | Amazon | 2025" /></Field>
+                <Field label="Achievements" hint="One achievement per line"><Textarea value={draft.achievements} onChange={(e) => updateDraft('achievements', e.target.value)} placeholder="Dean's list" /></Field>
+              </div>
+              <Field label="Projects or portfolio items" hint="One project title or portfolio item per line"><Textarea value={draft.portfolio} onChange={(e) => updateDraft('portfolio', e.target.value)} placeholder="Campus marketplace" /></Field>
+            </div>
+          </Card>
           <Card>
             <CardHeader title="Resume Upload" action={<Button variant="outline" size="sm" onClick={handleUpload} disabled={uploading}><Upload className="h-3.5 w-3.5" />{uploading ? 'Uploading…' : 'Upload New'}</Button>} />
             <input ref={fileRef} type="file" accept=".pdf,.doc,.docx" className="hidden" onChange={handleFileChange} />
@@ -210,7 +263,7 @@ export default function StudentResumePage() {
 function profileCompleteness(p: StudentProfile | null): number {
   if (!p) return 0;
   let filled = 0;
-  let total = 8;
+  const total = 8;
   if (p.bio) filled++;
   if (p.skills?.length) filled++;
   if (p.education?.length) filled++;

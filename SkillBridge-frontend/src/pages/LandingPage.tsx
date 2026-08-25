@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import {
   ArrowRight, Sparkles, Brain, Target, Users, ShieldCheck, Briefcase, GraduationCap,
   Search, FileCheck, MessageSquare, TrendingUp, CheckCircle2, Star, Quote, ChevronDown,
-  Building2, Trophy, Laptop, FlaskConical, Clock, Award, Zap,
+  Building2, Trophy, Laptop, FlaskConical, Clock,
 } from 'lucide-react';
 import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';

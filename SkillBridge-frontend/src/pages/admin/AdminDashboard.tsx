@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Users, Building2, Briefcase, ShieldCheck, ArrowRight, Clock, TrendingUp, TriangleAlert as AlertTriangle, Sparkles, CircleCheck as CheckCircle2 } from 'lucide-react';
+import { Users, Building2, Briefcase, ShieldCheck, Clock, Sparkles } from 'lucide-react';
 import { PageContainer } from '@/components/layout/DashboardLayout';
 import { StatCard } from '@/components/shared/StatCard';
 import { Card, CardHeader } from '@/components/ui/Card';

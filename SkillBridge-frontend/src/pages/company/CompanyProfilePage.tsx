@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react';
-import { MapPin, Globe, CheckCircle2, Pencil, Upload, Building2, Briefcase } from 'lucide-react';
+import { MapPin, Globe, CheckCircle2, Pencil, Upload, Building2 } from 'lucide-react';
 import { PageContainer } from '@/components/layout/DashboardLayout';
 import { Card, CardHeader } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { Modal } from '@/components/ui/Modal';
-import { Field, Input, Textarea, Select } from '@/components/ui/Input';
+import { Field, Input, Textarea } from '@/components/ui/Input';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { SkeletonCard } from '@/components/ui/Skeleton';
 import { useToast } from '@/components/ui/Toast';
@@ -143,7 +143,7 @@ export default function CompanyProfilePage() {
 function completeness(c: Company | null): number {
   if (!c) return 0;
   let filled = 0;
-  let total = 4;
+  const total = 4;
   if (c.about) filled++;
   if (c.industry) filled++;
   if (c.website) filled++;

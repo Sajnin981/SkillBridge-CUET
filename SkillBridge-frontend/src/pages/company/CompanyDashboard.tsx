@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Briefcase, Users, Eye, TrendingUp, ArrowRight, Plus, CheckCircle2, Star, Building2 } from 'lucide-react';
+import { Briefcase, Users, Eye, Plus, CheckCircle2, Star } from 'lucide-react';
 import { PageContainer } from '@/components/layout/DashboardLayout';
 import { StatCard } from '@/components/shared/StatCard';
 import { Card, CardHeader } from '@/components/ui/Card';

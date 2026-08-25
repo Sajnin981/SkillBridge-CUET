@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Bell, CheckCircle2, MessageSquare, Briefcase, Info } from 'lucide-react';
 import { PageContainer } from '@/components/layout/DashboardLayout';
-import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Skeleton } from '@/components/ui/Skeleton';

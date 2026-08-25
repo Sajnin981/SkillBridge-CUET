@@ -6,7 +6,8 @@ interface ConvList { items: BackendConversation[] }
 interface MsgList { items: BackendMessage[]; pagination: Pagination }
 
 export const messageService = {
-  async getConversations(_role: Role): Promise<{ id: string; name: string; avatar: string; role: string; last: string; time: string; unread: number; online: boolean }[]> {
+  async getConversations(role: Role): Promise<{ id: string; name: string; avatar: string; role: string; last: string; time: string; unread: number; online: boolean }[]> {
+    void role;
     const res = await api.get<ApiEnvelope<ConvList>>('/messages/conversations');
     return res.data.data.items.map(mapConversation);
   },

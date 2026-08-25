@@ -1,6 +1,6 @@
 import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
-import { ShieldCheck, Users, Building2, Sparkles, Target, Brain, GraduationCap, Award } from 'lucide-react';
+import { ShieldCheck, Users, Sparkles, Target, Brain, Award } from 'lucide-react';
 
 const values = [
   { icon: ShieldCheck, title: 'Verified & Trusted', description: 'Every student and company is verified to ensure a safe, scam-free ecosystem.' },

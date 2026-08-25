@@ -9,7 +9,8 @@ interface NotifList {
 }
 
 export const notificationService = {
-  async getAll(_role: Role): Promise<Notification[]> {
+  async getAll(role: Role): Promise<Notification[]> {
+    void role;
     const res = await api.get<ApiEnvelope<NotifList>>('/notifications');
     return res.data.data.items.map(mapNotification);
   },

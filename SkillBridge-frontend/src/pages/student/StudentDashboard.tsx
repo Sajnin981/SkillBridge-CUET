@@ -31,18 +31,19 @@ export default function StudentDashboard() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (!user) return;
     Promise.all([
       applicationService.getApplications(),
       opportunityService.getAll(),
       aiService.getRecommendations(),
-      user ? notificationService.getAll(user.role) : Promise.resolve([]),
+      notificationService.getAll(user.role),
     ]).then(([apps, opps, recs, notifs]) => {
       setApplications(apps);
       setOpportunities(opps);
       setRecommendations(recs);
       setNotifications(notifs);
       setLoading(false);
-    });
+    }).catch(() => setLoading(false));
   }, [user]);
 
   if (loading) {

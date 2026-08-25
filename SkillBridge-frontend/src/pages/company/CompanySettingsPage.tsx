@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Building2, Bell, Lock, Globe, Users, Trash2, Mail } from 'lucide-react';
+import { Building2, Bell, Lock, Users, Trash2 } from 'lucide-react';
 import { PageContainer } from '@/components/layout/DashboardLayout';
 import { Card, CardHeader } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';

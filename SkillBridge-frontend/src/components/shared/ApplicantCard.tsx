@@ -1,4 +1,4 @@
-import { Mail, Star, CheckCircle2, XCircle, Eye } from 'lucide-react';
+import { Mail, CheckCircle2, XCircle, Eye } from 'lucide-react';
 import type { Applicant } from '@/lib/types';
 import { Avatar } from '@/components/ui/Avatar';
 import { Badge } from '@/components/ui/Badge';

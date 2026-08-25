@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Pencil, Upload, Plus, Github, Linkedin, Globe, Award, FolderGit2, GraduationCap, Briefcase, FileText, CheckCircle2, User, X } from 'lucide-react';
+import { Pencil, Upload, Plus, Github, Linkedin, Globe, Award, FolderGit2, GraduationCap, Briefcase, FileText, CheckCircle2, User } from 'lucide-react';
 import { PageContainer } from '@/components/layout/DashboardLayout';
 import { Card, CardHeader } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -34,7 +34,7 @@ export default function StudentProfilePage() {
   const handleSave = () => {
     setSaving(true);
     const skills = editForm.skills.split(',').map((s) => s.trim()).filter(Boolean);
-    studentService.updateProfile({ bio: editForm.bio, phone: editForm.phone, location: editForm.location, skills }).then((p) => {
+    studentService.updateProfile({ bio: editForm.bio, skills }).then((p) => {
       setProfile(p);
       setSaving(false);
       setEditOpen(false);

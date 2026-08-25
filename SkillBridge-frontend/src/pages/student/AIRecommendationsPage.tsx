@@ -13,6 +13,8 @@ import type { Opportunity } from '@/lib/types';
 
 interface Recommendation {
   opportunityId: string;
+  title?: string;
+  company?: string;
   matchScore: number;
   reason: string;
   missingSkills: string[];
@@ -35,8 +37,8 @@ export default function AIRecommendationsPage() {
     const opp = opportunities.find((o) => o.id === r.opportunityId);
     return {
       ...r,
-      title: opp?.title || (r as any).title || 'Recommended Opportunity',
-      company: opp?.company || (r as any).company || 'SkillBridge Partner',
+      title: opp?.title || r.title || 'Recommended Opportunity',
+      company: opp?.company || r.company || 'SkillBridge Partner',
       location: opp?.location || 'Remote',
       type: opp?.type || 'Internship',
       oppId: opp?.id || r.opportunityId,

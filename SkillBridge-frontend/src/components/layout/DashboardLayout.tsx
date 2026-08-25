@@ -40,12 +40,6 @@ const adminNav: NavItem[] = [
   { to: '/admin', label: 'Dashboard', icon: LayoutDashboard },
   { to: '/admin/verifications', label: 'Verifications', icon: ShieldCheck },
   { to: '/admin/companies', label: 'Companies', icon: Building2 },
-  { to: '/admin/students', label: 'Students', icon: Users },
-  { to: '/admin/opportunities', label: 'Opportunities', icon: Briefcase },
-  { to: '/admin/ai-logs', label: 'AI Logs', icon: Sparkles },
-  { to: '/admin/reports', label: 'Reports', icon: FileText },
-  { to: '/admin/analytics', label: 'Analytics', icon: BarChart3 },
-  { to: '/admin/settings', label: 'Settings', icon: Settings },
 ];
 
 const navByRole: Record<string, NavItem[]> = {

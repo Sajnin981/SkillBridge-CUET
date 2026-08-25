@@ -1,11 +1,10 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { ArrowLeft, MapPin, Clock, Briefcase, Users, CheckCircle2, Bookmark, Share2, ExternalLink, Calendar, DollarSign } from 'lucide-react';
+import { ArrowLeft, MapPin, Briefcase, Users, CheckCircle2, Bookmark, Share2, ExternalLink, Calendar, DollarSign } from 'lucide-react';
 import { PageContainer } from '@/components/layout/DashboardLayout';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { Avatar } from '@/components/ui/Avatar';
-import { Card } from '@/components/ui/Card';
 import { Modal } from '@/components/ui/Modal';
 import { SkillTags } from '@/components/shared/SkillTags';
 import { EmptyState } from '@/components/ui/EmptyState';
@@ -38,8 +37,13 @@ export default function OpportunityDetailsPage() {
     opportunityService.getById(id).then((o) => {
       setOpportunity(o);
       setLoading(false);
-      studentService.getSavedOpportunities().then((savedItems: any[]) => {
-        setSaved(savedItems.some((s: any) => (typeof s === 'string' ? s : s?._id || s?.id) === id));
+      studentService.getSavedOpportunities().then((savedItems) => {
+        setSaved(savedItems.some((savedItem) => {
+          if (typeof savedItem === 'string') return savedItem === id;
+          if (!savedItem || typeof savedItem !== 'object') return false;
+          const item = savedItem as { _id?: string; id?: string };
+          return item._id === id || item.id === id;
+        }));
       }).catch(() => {});
       applicationService.getApplications().then((apps) => {
         setApplied(apps.some((a) => a.opportunityId === id));

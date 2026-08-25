@@ -1,6 +1,6 @@
 import { api, type ApiEnvelope, type BackendCompany, type BackendOpportunity, type Pagination } from '@/api/axios';
 import { mapCompany, mapOpportunity } from '@/api/mappers';
-import type { Company, Opportunity } from '@/lib/types';
+import type { Opportunity } from '@/lib/types';
 
 interface PaginatedVerifications {
   role: string;

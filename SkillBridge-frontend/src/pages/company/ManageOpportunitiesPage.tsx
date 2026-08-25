@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Plus, Users, Clock, Pencil, Eye, Trash2, Briefcase } from 'lucide-react';
+import { Plus, Users, Clock, Eye, Trash2, Briefcase } from 'lucide-react';
 import { PageContainer } from '@/components/layout/DashboardLayout';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';

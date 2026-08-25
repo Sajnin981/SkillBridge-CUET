@@ -1,8 +1,7 @@
 import { useEffect, useState } from 'react';
-import { Search, Building2 } from 'lucide-react';
+import { Building2 } from 'lucide-react';
 import { PageContainer } from '@/components/layout/DashboardLayout';
 import { SearchBar } from '@/components/shared/SearchBar';
-import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { SkeletonCard } from '@/components/ui/Skeleton';

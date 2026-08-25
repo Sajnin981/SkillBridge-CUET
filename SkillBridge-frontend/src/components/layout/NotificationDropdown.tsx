@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Bell, CheckCircle2, MessageSquare, Briefcase, Info, X, LogOut } from 'lucide-react';
+import { Bell, CheckCircle2, MessageSquare, Briefcase, Info, LogOut } from 'lucide-react';
 import { Avatar } from '@/components/ui/Avatar';
 import { notificationService } from '@/services/notificationService';
 import { timeAgo } from '@/lib/utils';
@@ -121,7 +121,7 @@ export function UserAvatarMenu({ name, avatar, role, onLogout }: UserMenuProps) 
   return (
     <div className="relative" ref={ref}>
       <button onClick={() => setOpen(!open)} className="flex items-center gap-2 rounded-xl p-1 pr-2 transition hover:bg-ink-100">
-        <Avatar name={name} size="sm" />
+        <Avatar name={name} src={avatar} size="sm" />
         <span className="hidden text-sm font-medium text-ink-700 sm:block">{name.split(' ')[0]}</span>
       </button>
       {open && (
