@@ -31,7 +31,17 @@ export default function AIRecommendationsPage() {
     });
   }, []);
 
-  const enriched = recs.map((r) => ({ ...r, opp: opportunities.find((o) => o.id === r.opportunityId) })).filter((r) => r.opp);
+  const enriched = recs.map((r) => {
+    const opp = opportunities.find((o) => o.id === r.opportunityId);
+    return {
+      ...r,
+      title: opp?.title || (r as any).title || 'Recommended Opportunity',
+      company: opp?.company || (r as any).company || 'SkillBridge Partner',
+      location: opp?.location || 'Remote',
+      type: opp?.type || 'Internship',
+      oppId: opp?.id || r.opportunityId,
+    };
+  });
 
   return (
     <PageContainer>
@@ -68,14 +78,14 @@ export default function AIRecommendationsPage() {
                 </div>
                 <div className="flex-1">
                   <div className="flex items-start justify-between gap-3">
-                    <Link to={`/student/opportunities/${r.opp!.id}`} className="flex items-center gap-3">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-brand-100 text-sm font-semibold text-brand-700">{r.opp!.company.slice(0, 2).toUpperCase()}</div>
+                    <Link to={`/student/opportunities/${r.oppId}`} className="flex items-center gap-3">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-brand-100 text-sm font-semibold text-brand-700">{r.company.slice(0, 2).toUpperCase()}</div>
                       <div>
-                        <p className="text-base font-semibold text-ink-800 hover:text-brand-700">{r.opp!.title}</p>
-                        <p className="text-sm text-ink-500">{r.opp!.company} · {r.opp!.location}</p>
+                        <p className="text-base font-semibold text-ink-800 hover:text-brand-700">{r.title}</p>
+                        <p className="text-sm text-ink-500">{r.company} · {r.location}</p>
                       </div>
                     </Link>
-                    <Badge tone="brand">{r.opp!.type}</Badge>
+                    <Badge tone="brand">{r.type}</Badge>
                   </div>
                   <div className="mt-3 rounded-xl bg-brand-50/50 p-3">
                     <p className="flex items-start gap-2 text-sm text-ink-600"><Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-brand-500" />{r.reason}</p>
@@ -89,7 +99,7 @@ export default function AIRecommendationsPage() {
                     </div>
                   )}
                   <div className="mt-3 flex items-center justify-end">
-                    <Link to={`/student/opportunities/${r.opp!.id}`}><Button size="sm" variant="outline">View & Apply <ArrowRight className="h-3.5 w-3.5" /></Button></Link>
+                    <Link to={`/student/opportunities/${r.oppId}`}><Button size="sm" variant="outline">View & Apply <ArrowRight className="h-3.5 w-3.5" /></Button></Link>
                   </div>
                 </div>
               </div>

@@ -16,9 +16,9 @@ export const messageService = {
     return res.data.data.conversation;
   },
 
-  async getMessages(conversationId: string, page = 1, limit = 50): Promise<{ id: string; from: 'me' | 'them'; text: string; time: string }[]> {
+  async getMessages(conversationId: string, userRole?: string, userId?: string, page = 1, limit = 50): Promise<{ id: string; from: 'me' | 'them'; text: string; time: string }[]> {
     const res = await api.get<ApiEnvelope<MsgList>>(`/messages/conversations/${conversationId}/messages`, { params: { page, limit } });
-    return res.data.data.items.map(mapMessage);
+    return res.data.data.items.map((m) => mapMessage(m, userRole, userId));
   },
 
   async sendMessage(conversationId: string, content: string) {

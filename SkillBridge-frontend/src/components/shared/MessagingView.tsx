@@ -29,14 +29,22 @@ interface MessagingViewProps {
   emptyDescription: string;
   conversations: Conversation[];
   messagesByConv: Record<string, Message[]>;
+  onSendMessage?: (conversationId: string, text: string) => Promise<void>;
 }
 
-export function MessagingView({ title, emptyTitle, emptyDescription, conversations, messagesByConv }: MessagingViewProps) {
+export function MessagingView({ title, emptyTitle, emptyDescription, conversations, messagesByConv, onSendMessage }: MessagingViewProps) {
   const [activeId, setActiveId] = useState<string | null>(conversations[0]?.id ?? null);
   const [messages, setMessages] = useState<Message[]>(activeId ? messagesByConv[activeId] ?? [] : []);
   const [input, setInput] = useState('');
+  const [search, setSearch] = useState('');
   const [mobileChat, setMobileChat] = useState(false);
   const endRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!activeId && conversations.length > 0) {
+      setActiveId(conversations[0].id);
+    }
+  }, [conversations, activeId]);
 
   useEffect(() => {
     if (activeId) setMessages(messagesByConv[activeId] ?? []);
@@ -46,11 +54,23 @@ export function MessagingView({ title, emptyTitle, emptyDescription, conversatio
 
   const active = conversations.find((c) => c.id === activeId);
 
-  const send = (e: React.FormEvent) => {
+  const filteredConvs = conversations.filter((c) =>
+    !search || c.name.toLowerCase().includes(search.toLowerCase()) || c.role.toLowerCase().includes(search.toLowerCase())
+  );
+
+  const send = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!input.trim()) return;
-    setMessages([...messages, { id: Math.random().toString(36).slice(2), from: 'me', text: input, time: 'Now' }]);
+    const text = input.trim();
+    if (!text || !activeId) return;
     setInput('');
+    setMessages((prev) => [...prev, { id: Math.random().toString(36).slice(2), from: 'me', text, time: 'Now' }]);
+    if (onSendMessage) {
+      try {
+        await onSendMessage(activeId, text);
+      } catch {
+        // Handled in parent
+      }
+    }
   };
 
   if (conversations.length === 0) {
@@ -73,11 +93,11 @@ export function MessagingView({ title, emptyTitle, emptyDescription, conversatio
           <div className="border-b border-ink-100 p-3">
             <div className="relative">
               <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-400" />
-              <input className="input pl-10" placeholder="Search conversations…" />
+              <input value={search} onChange={(e) => setSearch(e.target.value)} className="input pl-10" placeholder="Search conversations…" />
             </div>
           </div>
           <div className="overflow-y-auto scrollbar-thin">
-            {conversations.map((c) => (
+            {filteredConvs.map((c) => (
               <button key={c.id} onClick={() => { setActiveId(c.id); setMobileChat(true); }} className={cn('flex w-full items-center gap-3 border-b border-ink-50 p-3.5 text-left transition hover:bg-ink-50', activeId === c.id && 'bg-brand-50')}>
                 <div className="relative">
                   <Avatar name={c.name} size="md" />

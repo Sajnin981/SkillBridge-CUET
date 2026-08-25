@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from 'react';
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
-import { GraduationCap, Menu, X, Search, LayoutDashboard, User, Briefcase, Bookmark, FileText, Sparkles, Bell, Settings, Building2, Users, ShieldCheck, ChartBar as FileBarChart, ChartBar as BarChart3, MessageSquare, Award, FolderGit2, FileUp, LogOut } from 'lucide-react';
+import { GraduationCap, Menu, X, Search, LayoutDashboard, User, Briefcase, Bookmark, FileText, Sparkles, Bell, Settings, Building2, Users, ShieldCheck, BarChart3, MessageSquare, Award, FolderGit2, FileUp, LogOut } from 'lucide-react';
 import { NotificationDropdown, UserAvatarMenu } from './NotificationDropdown';
 import { useAuth } from '@/context/AuthContext';
 import { cn } from '@/lib/utils';
@@ -40,6 +40,12 @@ const adminNav: NavItem[] = [
   { to: '/admin', label: 'Dashboard', icon: LayoutDashboard },
   { to: '/admin/verifications', label: 'Verifications', icon: ShieldCheck },
   { to: '/admin/companies', label: 'Companies', icon: Building2 },
+  { to: '/admin/students', label: 'Students', icon: Users },
+  { to: '/admin/opportunities', label: 'Opportunities', icon: Briefcase },
+  { to: '/admin/ai-logs', label: 'AI Logs', icon: Sparkles },
+  { to: '/admin/reports', label: 'Reports', icon: FileText },
+  { to: '/admin/analytics', label: 'Analytics', icon: BarChart3 },
+  { to: '/admin/settings', label: 'Settings', icon: Settings },
 ];
 
 const navByRole: Record<string, NavItem[]> = {

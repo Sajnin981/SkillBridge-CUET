@@ -39,15 +39,32 @@ export default function ApplicantsPage() {
     return true;
   });
 
-  const shortlist = (id: string) => {
-    applicationService.shortlist(id);
-    setList((prev) => prev.map((a) => a.id === id ? { ...a, shortlisted: !a.shortlisted } : a));
-    toast({ title: 'Candidate shortlisted', variant: 'success' });
+  const shortlist = async (id: string) => {
+    try {
+      await applicationService.shortlist(id);
+      setList((prev) => prev.map((a) => a.id === id ? { ...a, shortlisted: true, rejected: false, status: 'shortlisted' } : a));
+      if (selected && selected.id === id) {
+        setSelected({ ...selected, shortlisted: true, rejected: false, status: 'shortlisted' });
+      }
+      toast({ title: 'Candidate shortlisted', variant: 'success' });
+    } catch (err) {
+      const apiErr = normalizeError(err);
+      toast({ title: 'Action failed', description: apiErr.message, variant: 'error' });
+    }
   };
-  const reject = (id: string) => {
-    applicationService.reject(id);
-    setList((prev) => prev.map((a) => a.id === id ? { ...a, rejected: !a.rejected } : a));
-    toast({ title: 'Candidate rejected', variant: 'info' });
+
+  const reject = async (id: string) => {
+    try {
+      await applicationService.reject(id);
+      setList((prev) => prev.map((a) => a.id === id ? { ...a, rejected: true, shortlisted: false, status: 'rejected' } : a));
+      if (selected && selected.id === id) {
+        setSelected({ ...selected, rejected: true, shortlisted: false, status: 'rejected' });
+      }
+      toast({ title: 'Candidate marked as rejected', variant: 'info' });
+    } catch (err) {
+      const apiErr = normalizeError(err);
+      toast({ title: 'Action failed', description: apiErr.message, variant: 'error' });
+    }
   };
 
   return (

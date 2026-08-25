@@ -15,11 +15,11 @@ const statusTone: Record<string, 'neutral' | 'brand' | 'accent' | 'success' | 'w
 };
 
 export default function AppliedOpportunitiesPage() {
-  const [applications, setApplications] = useState<{ id: string; status: string; stage: string; date: string; opportunityId: string }[]>([]);
+  const [applications, setApplications] = useState<{ id: string; status: string; stage: string; opportunityTitle: string; companyName: string; date: string; opportunityId: string }[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    applicationService.getApplications().then((a) => { setApplications(a); setLoading(false); });
+    applicationService.getApplications().then((a) => { setApplications(a); setLoading(false); }).catch(() => setLoading(false));
   }, []);
 
   return (
@@ -51,8 +51,8 @@ export default function AppliedOpportunitiesPage() {
             <Card key={a.id}>
               <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
                 <Link to={`/student/opportunities/${a.opportunityId}`} className="flex-1">
-                  <p className="text-base font-semibold text-ink-800 hover:text-brand-700">Application #{a.id}</p>
-                  <p className="text-sm text-ink-500">{a.stage}</p>
+                  <p className="text-base font-semibold text-ink-800 hover:text-brand-700">{a.opportunityTitle || a.stage || `Application #${a.id}`}</p>
+                  <p className="text-sm text-ink-500">{a.companyName || 'SkillBridge Partner'}</p>
                 </Link>
                 <Badge tone={statusTone[a.status] ?? 'neutral'}>{a.status}</Badge>
                 <Link to={`/student/opportunities/${a.opportunityId}`}><Button variant="outline" size="sm">View</Button></Link>

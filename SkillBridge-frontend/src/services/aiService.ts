@@ -39,10 +39,12 @@ export const aiService = {
     };
   },
 
-  async getRecommendations(): Promise<{ opportunityId: string; matchScore: number; reason: string; missingSkills: string[] }[]> {
+  async getRecommendations(): Promise<{ opportunityId: string; title: string; company: string; matchScore: number; reason: string; missingSkills: string[] }[]> {
     const res = await api.get<ApiEnvelope<{ recommendations: Recommendation[]; isPlaceholder: boolean }>>('/ai/recommendations');
     return res.data.data.recommendations.map((r) => ({
       opportunityId: r.opportunityId,
+      title: r.title || 'Opportunity',
+      company: r.company || 'Company',
       matchScore: r.matchScore,
       reason: r.matchReasons.join(', '),
       missingSkills: [],

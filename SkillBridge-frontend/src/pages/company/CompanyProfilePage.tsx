@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { MapPin, Globe, CircleCheck as CheckCircle2, Pencil, Upload, Building2, Briefcase } from 'lucide-react';
+import { MapPin, Globe, CheckCircle2, Pencil, Upload, Building2, Briefcase } from 'lucide-react';
 import { PageContainer } from '@/components/layout/DashboardLayout';
 import { Card, CardHeader } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -124,7 +124,7 @@ export default function CompanyProfilePage() {
         footer={<><Button variant="outline" onClick={() => setEditOpen(false)}>Cancel</Button><Button onClick={handleSave} disabled={saving}>{saving ? 'Saving…' : 'Save changes'}</Button></>}>
         <div className="space-y-4">
           <div className="flex items-center gap-4">
-            <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-brand-100 text-2xl font-bold text-brand-600">{company?.logo || user?.avatar ?? 'CO'}</div>
+            <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-brand-100 text-2xl font-bold text-brand-600">{company?.logo || user?.avatar || 'CO'}</div>
             <div><Button variant="outline" size="sm"><Upload className="h-3.5 w-3.5" />Upload logo</Button><p className="mt-1.5 text-xs text-ink-400">Square image, max 1MB</p></div>
           </div>
           <div className="grid gap-4 sm:grid-cols-2">

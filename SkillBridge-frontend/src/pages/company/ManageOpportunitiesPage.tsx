@@ -9,7 +9,8 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { SkeletonCard } from '@/components/ui/Skeleton';
 import { Modal } from '@/components/ui/Modal';
 import { useToast } from '@/components/ui/Toast';
-import { opportunityService } from '@/services/opportunityService';
+import { companyService } from '@/services/companyService';
+import { normalizeError } from '@/api/axios';
 import type { Opportunity } from '@/lib/types';
 import { daysLeft } from '@/lib/utils';
 
@@ -18,10 +19,30 @@ export default function ManageOpportunitiesPage() {
   const [deleteOpen, setDeleteOpen] = useState<string | null>(null);
   const [opportunities, setOpportunities] = useState<Opportunity[]>([]);
   const [loading, setLoading] = useState(true);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
-    opportunityService.getAll().then((o) => { setOpportunities(o); setLoading(false); });
+    companyService.listMyOpportunities().then((o) => {
+      setOpportunities(o);
+      setLoading(false);
+    }).catch(() => setLoading(false));
   }, []);
+
+  const handleDelete = async () => {
+    if (!deleteOpen) return;
+    setDeleting(true);
+    try {
+      await companyService.deleteOpportunity(deleteOpen);
+      setOpportunities((prev) => prev.filter((o) => o.id !== deleteOpen));
+      toast({ title: 'Opportunity deleted', variant: 'success' });
+      setDeleteOpen(null);
+    } catch (err) {
+      const apiErr = normalizeError(err);
+      toast({ title: 'Failed to delete opportunity', description: apiErr.message, variant: 'error' });
+    } finally {
+      setDeleting(false);
+    }
+  };
 
   return (
     <PageContainer>
@@ -57,7 +78,6 @@ export default function ManageOpportunitiesPage() {
                   <Badge tone={daysLeft(o.deadline) > 7 ? 'success' : 'warning'}><Clock className="h-3 w-3" />{daysLeft(o.deadline)}d left</Badge>
                   <div className="flex gap-1">
                     <Link to="/company/applicants"><Button variant="ghost" size="icon"><Eye className="h-4 w-4" /></Button></Link>
-                    <Button variant="ghost" size="icon"><Pencil className="h-4 w-4" /></Button>
                     <Button variant="ghost" size="icon" onClick={() => setDeleteOpen(o.id)}><Trash2 className="h-4 w-4 text-danger-500" /></Button>
                   </div>
                 </div>
@@ -68,7 +88,7 @@ export default function ManageOpportunitiesPage() {
       )}
 
       <Modal open={!!deleteOpen} onClose={() => setDeleteOpen(null)} title="Delete opportunity?" size="sm"
-        footer={<><Button variant="outline" onClick={() => setDeleteOpen(null)}>Cancel</Button><Button variant="danger" onClick={() => { setDeleteOpen(null); toast({ title: 'Opportunity deleted', variant: 'success' }); }}>Delete</Button></>}>
+        footer={<><Button variant="outline" onClick={() => setDeleteOpen(null)}>Cancel</Button><Button variant="danger" loading={deleting} onClick={handleDelete}>Delete</Button></>}>
         <p className="text-sm text-ink-600">Are you sure you want to delete this opportunity? This action cannot be undone and all applicant data will be removed.</p>
       </Modal>
     </PageContainer>

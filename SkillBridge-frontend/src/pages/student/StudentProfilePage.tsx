@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Pencil, Upload, Plus, GitFork as Github, Link as Linkedin, Globe, Award, FolderGit2, GraduationCap, Briefcase, FileText, CircleCheck as CheckCircle2, User, X } from 'lucide-react';
+import { Pencil, Upload, Plus, Github, Linkedin, Globe, Award, FolderGit2, GraduationCap, Briefcase, FileText, CheckCircle2, User, X } from 'lucide-react';
 import { PageContainer } from '@/components/layout/DashboardLayout';
 import { Card, CardHeader } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';

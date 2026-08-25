@@ -23,15 +23,22 @@ export const applicationService = {
     return res.data.data.application;
   },
 
-  async getApplications(): Promise<{ id: string; status: string; stage: string; date: string; opportunityId: string }[]> {
+  async getApplications(): Promise<{ id: string; status: string; stage: string; opportunityTitle: string; companyName: string; companyLogo: string; date: string; opportunityId: string }[]> {
     const res = await api.get<ApiEnvelope<PaginatedApps>>('/applications/me');
-    return res.data.data.items.map((a) => ({
-      id: a._id,
-      status: a.status,
-      stage: typeof a.opportunity === 'object' ? a.opportunity.title : '',
-      date: a.createdAt,
-      opportunityId: typeof a.opportunity === 'object' ? a.opportunity._id : '',
-    }));
+    return res.data.data.items.map((a) => {
+      const opp = typeof a.opportunity === 'object' ? a.opportunity : null;
+      const comp = typeof a.company === 'object' ? a.company : null;
+      return {
+        id: a._id,
+        status: a.status,
+        stage: opp?.title || 'Application',
+        opportunityTitle: opp?.title || 'Opportunity',
+        companyName: comp?.companyName || 'Company',
+        companyLogo: comp?.logoUrl || '',
+        date: a.createdAt,
+        opportunityId: opp?._id || '',
+      };
+    });
   },
 
   async getApplication(id: string): Promise<BackendApplication | null> {
@@ -44,7 +51,8 @@ export const applicationService = {
   },
 
   async getApplicants(opportunityId?: string): Promise<Applicant[]> {
-    const res = await api.get<ApiEnvelope<PaginatedApps>>(`/applications/opportunity/${opportunityId}`);
+    const url = opportunityId ? `/applications/opportunity/${opportunityId}` : '/applications/company';
+    const res = await api.get<ApiEnvelope<PaginatedApps>>(url);
     return res.data.data.items.map(mapApplicant);
   },
 

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { FileText, Upload, FileUp, CircleCheck as CheckCircle2, GraduationCap, Briefcase, Award, FolderGit2, User } from 'lucide-react';
+import { FileText, Upload, FileUp, CheckCircle2, GraduationCap, Briefcase, Award, FolderGit2, User } from 'lucide-react';
 import { PageContainer } from '@/components/layout/DashboardLayout';
 import { Card, CardHeader } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -29,8 +29,8 @@ export default function StudentResumePage() {
     const file = e.target.files?.[0];
     if (!file) return;
     setUploading(true);
-    studentService.uploadResume(file).then((p) => {
-      setProfile(p);
+    studentService.uploadResume(file).then((res) => {
+      setProfile((prev) => prev ? { ...prev, resumeUrl: res.resumeUrl } : prev);
       setUploading(false);
       toast({ title: 'Resume uploaded', variant: 'success' });
     }).catch(() => {

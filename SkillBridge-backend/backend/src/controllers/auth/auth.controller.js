@@ -44,7 +44,7 @@ exports.registerStudent = async (req, res, next) => {
     return success(res, {
       statusCode: 201,
       message: "Registration successful. Your account is pending admin approval.",
-      data: { student, token },
+      data: { user: student, student, token, role: "student" },
     });
   } catch (err) {
     next(err);
@@ -90,7 +90,7 @@ exports.registerCompany = async (req, res, next) => {
     return success(res, {
       statusCode: 201,
       message: "Registration successful. Your company is pending admin approval.",
-      data: { company, token },
+      data: { user: company, company, token, role: "company" },
     });
   } catch (err) {
     next(err);

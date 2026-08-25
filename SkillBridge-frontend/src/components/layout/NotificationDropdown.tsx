@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Bell, CircleCheck as CheckCircle2, MessageSquare, Briefcase, Info, X, LogOut } from 'lucide-react';
+import { Bell, CheckCircle2, MessageSquare, Briefcase, Info, X, LogOut } from 'lucide-react';
 import { Avatar } from '@/components/ui/Avatar';
 import { notificationService } from '@/services/notificationService';
 import { timeAgo } from '@/lib/utils';

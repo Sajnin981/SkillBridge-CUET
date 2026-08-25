@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { ArrowLeft, MapPin, Clock, Briefcase, Users, CircleCheck as CheckCircle2, Bookmark, Share2, ExternalLink, Calendar, DollarSign } from 'lucide-react';
+import { ArrowLeft, MapPin, Clock, Briefcase, Users, CheckCircle2, Bookmark, Share2, ExternalLink, Calendar, DollarSign } from 'lucide-react';
 import { PageContainer } from '@/components/layout/DashboardLayout';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
@@ -38,8 +38,8 @@ export default function OpportunityDetailsPage() {
     opportunityService.getById(id).then((o) => {
       setOpportunity(o);
       setLoading(false);
-      studentService.getSavedOpportunities().then((savedIds) => {
-        setSaved(savedIds.some((sid: string) => sid === id));
+      studentService.getSavedOpportunities().then((savedItems: any[]) => {
+        setSaved(savedItems.some((s: any) => (typeof s === 'string' ? s : s?._id || s?.id) === id));
       }).catch(() => {});
       applicationService.getApplications().then((apps) => {
         setApplied(apps.some((a) => a.opportunityId === id));

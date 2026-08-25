@@ -233,3 +233,44 @@ exports.updateStatus = async (req, res, next) => {
     next(err);
   }
 };
+
+/**
+ * GET /api/applications/company
+ * Company views all applicants across all its opportunities (optional opportunityId filter).
+ */
+exports.listCompanyApplicants = async (req, res, next) => {
+  try {
+    const { status, opportunityId, page = 1, limit = 50 } = req.query;
+    const filter = { company: req.user._id };
+    if (status) filter.status = status;
+    if (opportunityId && mongoose.isValidObjectId(opportunityId)) {
+      filter.opportunity = opportunityId;
+    }
+
+    const skip = (Number(page) - 1) * Number(limit);
+    const [items, total] = await Promise.all([
+      Application.find(filter)
+        .populate("student", "fullName email department batch phone resumeUrl avatarUrl skills")
+        .populate("opportunity", "title type location deadline status")
+        .sort("-createdAt")
+        .skip(skip)
+        .limit(Number(limit)),
+      Application.countDocuments(filter),
+    ]);
+
+    return success(res, {
+      message: "Company applicants",
+      data: {
+        items,
+        pagination: {
+          page: Number(page),
+          limit: Number(limit),
+          total,
+          totalPages: Math.ceil(total / Number(limit)) || 1,
+        },
+      },
+    });
+  } catch (err) {
+    next(err);
+  }
+};

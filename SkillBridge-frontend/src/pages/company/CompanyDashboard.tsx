@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/Badge';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { SkeletonCard } from '@/components/ui/Skeleton';
 import { useAuth } from '@/context/AuthContext';
-import { opportunityService } from '@/services/opportunityService';
+import { companyService } from '@/services/companyService';
 import { applicationService } from '@/services/applicationService';
 import { useEffect, useState } from 'react';
 import type { Opportunity, Applicant } from '@/lib/types';
@@ -20,9 +20,9 @@ export default function CompanyDashboard() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    Promise.all([opportunityService.getAll(), applicationService.getApplicants()]).then(([o, a]) => {
+    Promise.all([companyService.listMyOpportunities(), applicationService.getApplicants()]).then(([o, a]) => {
       setOpportunities(o); setApplicants(a); setLoading(false);
-    });
+    }).catch(() => setLoading(false));
   }, []);
 
   if (loading) {

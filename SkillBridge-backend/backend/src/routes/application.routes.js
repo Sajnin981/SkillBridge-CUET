@@ -26,6 +26,13 @@ router.delete("/applications/:id/withdraw", protect, restrict("student"), applic
 
 // Company-side applicant management.
 router.get(
+  "/applications/company",
+  protect,
+  restrict("company"),
+  requireApproved,
+  application.listCompanyApplicants
+);
+router.get(
   "/applications/opportunity/:opportunityId",
   protect,
   restrict("company"),

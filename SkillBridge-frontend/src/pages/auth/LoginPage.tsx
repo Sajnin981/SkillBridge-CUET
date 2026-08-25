@@ -8,6 +8,8 @@ import { useToast } from '@/components/ui/Toast';
 import { useAuth } from '@/context/AuthContext';
 import type { Role } from '@/lib/types';
 
+import { normalizeError } from '@/api/axios';
+
 const roleConfig: { role: Role; icon: typeof GraduationCap; label: string; placeholder: string }[] = [
   { role: 'student', icon: GraduationCap, label: 'Student', placeholder: 'you@cuet.ac.bd' },
   { role: 'company', icon: Building2, label: 'Company', placeholder: 'company@email.com' },
@@ -16,6 +18,8 @@ const roleConfig: { role: Role; icon: typeof GraduationCap; label: string; place
 
 export default function LoginPage() {
   const [role, setRole] = useState<Role>('student');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [showPwd, setShowPwd] = useState(false);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
@@ -26,11 +30,12 @@ export default function LoginPage() {
     e.preventDefault();
     setLoading(true);
     try {
-      const user = await login('user@example.com', 'password', role);
+      const user = await login(email.trim(), password, role);
       toast({ title: `Welcome back, ${user.name.split(' ')[0]}!`, variant: 'success' });
       navigate(`/${role}`);
-    } catch {
-      toast({ title: 'Sign in failed', variant: 'error' });
+    } catch (err) {
+      const apiErr = normalizeError(err);
+      toast({ title: 'Sign in failed', description: apiErr.message, variant: 'error' });
     } finally {
       setLoading(false);
     }
@@ -40,17 +45,17 @@ export default function LoginPage() {
     <AuthLayout side={role === 'admin' ? 'company' : role} title="Welcome back" subtitle="Sign in to your SkillBridge account to continue.">
       <div className="mb-6 grid grid-cols-3 gap-2 rounded-xl bg-ink-100 p-1">
         {roleConfig.map(({ role: r, icon: Icon, label }) => (
-          <button key={r} onClick={() => setRole(r)} className={`flex items-center justify-center gap-1.5 rounded-lg py-2.5 text-sm font-medium transition ${role === r ? 'bg-white text-brand-700 shadow-sm' : 'text-ink-500'}`}>
+          <button key={r} onClick={() => { setRole(r); setEmail(''); setPassword(''); }} className={`flex items-center justify-center gap-1.5 rounded-lg py-2.5 text-sm font-medium transition ${role === r ? 'bg-white text-brand-700 shadow-sm' : 'text-ink-500'}`}>
             <Icon className="h-4 w-4" />{label}
           </button>
         ))}
       </div>
       <form onSubmit={submit} className="space-y-4">
         <Field label="Email" icon={<Mail className="h-4 w-4" />}>
-          <Input type="email" required placeholder={roleConfig.find((r) => r.role === role)!.placeholder} className="pl-10" />
+          <Input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder={roleConfig.find((r) => r.role === role)!.placeholder} className="pl-10" />
         </Field>
         <Field label="Password" icon={<Lock className="h-4 w-4" />}>
-          <Input type={showPwd ? 'text' : 'password'} required placeholder="••••••••" className="pl-10 pr-10" />
+          <Input type={showPwd ? 'text' : 'password'} required value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" className="pl-10 pr-10" />
           <button type="button" onClick={() => setShowPwd(!showPwd)} className="absolute right-3 top-1/2 -translate-y-1/2 text-ink-400 hover:text-ink-600">
             {showPwd ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
           </button>

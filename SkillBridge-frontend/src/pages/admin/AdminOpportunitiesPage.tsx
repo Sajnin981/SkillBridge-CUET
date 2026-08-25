@@ -10,6 +10,8 @@ import { SkeletonCard } from '@/components/ui/Skeleton';
 import { Modal } from '@/components/ui/Modal';
 import { useToast } from '@/components/ui/Toast';
 import { opportunityService } from '@/services/opportunityService';
+import { adminService } from '@/services/adminService';
+import { normalizeError } from '@/api/axios';
 import type { Opportunity } from '@/lib/types';
 import { timeAgo } from '@/lib/utils';
 
@@ -19,10 +21,27 @@ export default function AdminOpportunitiesPage() {
   const [deleteOpen, setDeleteOpen] = useState<string | null>(null);
   const [opportunities, setOpportunities] = useState<Opportunity[]>([]);
   const [loading, setLoading] = useState(true);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
-    opportunityService.getAll().then((o) => { setOpportunities(o); setLoading(false); });
+    opportunityService.getAll().then((o) => { setOpportunities(o); setLoading(false); }).catch(() => setLoading(false));
   }, []);
+
+  const handleDelete = async () => {
+    if (!deleteOpen) return;
+    setDeleting(true);
+    try {
+      await adminService.deleteOpportunity(deleteOpen);
+      setOpportunities((prev) => prev.filter((o) => o.id !== deleteOpen));
+      toast({ title: 'Opportunity removed', variant: 'success' });
+      setDeleteOpen(null);
+    } catch (err) {
+      const apiErr = normalizeError(err);
+      toast({ title: 'Failed to delete opportunity', description: apiErr.message, variant: 'error' });
+    } finally {
+      setDeleting(false);
+    }
+  };
 
   const filtered = opportunities.filter((o) => !search || o.title.toLowerCase().includes(search.toLowerCase()) || o.company.toLowerCase().includes(search.toLowerCase()));
 
@@ -72,7 +91,7 @@ export default function AdminOpportunitiesPage() {
       )}
 
       <Modal open={!!deleteOpen} onClose={() => setDeleteOpen(null)} title="Remove opportunity?" size="sm"
-        footer={<><Button variant="outline" onClick={() => setDeleteOpen(null)}>Cancel</Button><Button variant="danger" onClick={() => { setDeleteOpen(null); toast({ title: 'Opportunity removed', variant: 'success' }); }}>Remove</Button></>}>
+        footer={<><Button variant="outline" onClick={() => setDeleteOpen(null)}>Cancel</Button><Button variant="danger" loading={deleting} onClick={handleDelete}>Remove</Button></>}>
         <p className="text-sm text-ink-600">This will permanently remove the opportunity and all associated applications. This cannot be undone.</p>
       </Modal>
     </PageContainer>

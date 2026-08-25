@@ -34,13 +34,17 @@ export default function MessagingPage() {
       setConversations(convs as Conversation[]);
       const msgMap: Record<string, Message[]> = {};
       await Promise.all(convs.map(async (c) => {
-        const msgs = await messageService.getMessages(c.id);
+        const msgs = await messageService.getMessages(c.id, user.role, user.id);
         msgMap[c.id] = msgs as Message[];
       }));
       setMessagesByConv(msgMap);
       setLoading(false);
     }).catch(() => setLoading(false));
   }, [user]);
+
+  const handleSendMessage = async (conversationId: string, text: string) => {
+    await messageService.sendMessage(conversationId, text);
+  };
 
   if (loading) return <SkeletonCard />;
 
@@ -51,6 +55,7 @@ export default function MessagingPage() {
       emptyDescription="When applicants reach out, your conversations will appear here."
       conversations={conversations}
       messagesByConv={messagesByConv}
+      onSendMessage={handleSendMessage}
     />
   );
 }

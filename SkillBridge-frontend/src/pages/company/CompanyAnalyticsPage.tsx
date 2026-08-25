@@ -1,7 +1,10 @@
+import { useEffect, useState } from 'react';
 import { PageContainer } from '@/components/layout/DashboardLayout';
 import { StatCard } from '@/components/shared/StatCard';
 import { Card, CardHeader } from '@/components/ui/Card';
+import { SkeletonCard } from '@/components/ui/Skeleton';
 import { Briefcase, Users, Eye, TrendingUp } from 'lucide-react';
+import { companyService } from '@/services/companyService';
 
 const monthlyData = [
   { month: 'Jan', views: 120, applications: 15 },
@@ -14,6 +17,16 @@ const monthlyData = [
 ];
 
 export default function CompanyAnalyticsPage() {
+  const [stats, setStats] = useState<{ totalOpportunities: number; totalApplications: number; shortlisted: number; hired: number; views: number } | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    companyService.getAnalytics().then((s) => {
+      setStats(s);
+      setLoading(false);
+    }).catch(() => setLoading(false));
+  }, []);
+
   const maxViews = Math.max(...monthlyData.map((d) => d.views));
 
   return (
@@ -24,10 +37,10 @@ export default function CompanyAnalyticsPage() {
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label="Active Opportunities" value={4} icon={<Briefcase className="h-5 w-5" />} tone="brand" />
-        <StatCard label="Total Applicants" value={124} icon={<Users className="h-5 w-5" />} trend={{ value: '8 today', up: true }} tone="accent" />
-        <StatCard label="Profile Views" value={312} icon={<Eye className="h-5 w-5" />} trend={{ value: '15%', up: true }} tone="success" />
-        <StatCard label="Hire Rate" value="18%" icon={<TrendingUp className="h-5 w-5" />} tone="warning" />
+        <StatCard label="Active Opportunities" value={stats?.totalOpportunities ?? 0} icon={<Briefcase className="h-5 w-5" />} tone="brand" />
+        <StatCard label="Total Applicants" value={stats?.totalApplications ?? 0} icon={<Users className="h-5 w-5" />} tone="accent" />
+        <StatCard label="Shortlisted" value={stats?.shortlisted ?? 0} icon={<Eye className="h-5 w-5" />} tone="success" />
+        <StatCard label="Hired" value={stats?.hired ?? 0} icon={<TrendingUp className="h-5 w-5" />} tone="warning" />
       </div>
 
       <Card className="mt-6">

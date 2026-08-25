@@ -52,10 +52,12 @@ export const authService = {
       if (value instanceof File) formData.append(key, value);
       else if (value !== undefined && value !== null) formData.append(key, String(value));
     });
-    const res = await api.post<ApiEnvelope<LoginResponse>>('/auth/student/register', formData, {
+    const res = await api.post<ApiEnvelope<LoginResponse & { student?: BackendStudent; company?: BackendCompany }>>('/auth/student/register', formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
     });
-    const { user, token, role: backendRole } = res.data.data;
+    const { token } = res.data.data;
+    const user = res.data.data.user || res.data.data.student!;
+    const backendRole = res.data.data.role || 'student';
     setAuthToken(token);
     const mapped = mapBackendUser(user, backendRole);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(mapped));
@@ -79,10 +81,12 @@ export const authService = {
       if (value instanceof File) formData.append(key, value);
       else if (value !== undefined && value !== null) formData.append(key, String(value));
     });
-    const res = await api.post<ApiEnvelope<LoginResponse>>('/auth/company/register', formData, {
+    const res = await api.post<ApiEnvelope<LoginResponse & { student?: BackendStudent; company?: BackendCompany }>>('/auth/company/register', formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
     });
-    const { user, token, role: backendRole } = res.data.data;
+    const { token } = res.data.data;
+    const user = res.data.data.user || res.data.data.company!;
+    const backendRole = res.data.data.role || 'company';
     setAuthToken(token);
     const mapped = mapBackendUser(user, backendRole);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(mapped));

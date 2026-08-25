@@ -166,10 +166,21 @@ export function mapConversation(c: BackendConversation) {
   };
 }
 
-export function mapMessage(m: BackendMessage) {
+export function mapMessage(m: BackendMessage, currentUserRole?: string, currentUserId?: string) {
+  let isMe = false;
+  if (currentUserId && m.sender === currentUserId) {
+    isMe = true;
+  } else if (currentUserRole === 'student') {
+    isMe = m.senderModel === 'Student';
+  } else if (currentUserRole === 'company') {
+    isMe = m.senderModel === 'Company';
+  } else {
+    isMe = m.senderModel === 'Student';
+  }
+
   return {
     id: m._id,
-    from: (m.senderModel === 'Student' ? 'me' : 'them') as 'me' | 'them',
+    from: (isMe ? 'me' : 'them') as 'me' | 'them',
     text: m.content,
     time: new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
   };
