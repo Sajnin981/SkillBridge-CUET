@@ -39,12 +39,9 @@ import ApplicantsPage from '@/pages/company/ApplicantsPage';
 import MessagingPage from '@/pages/company/MessagingPage';
 import CompanySettingsPage from '@/pages/company/CompanySettingsPage';
 import CompanyAnalyticsPage from '@/pages/company/CompanyAnalyticsPage';
-
-import AdminDashboard from '@/pages/admin/AdminDashboard';
-import AdminCompaniesPage from '@/pages/admin/AdminCompaniesPage';
-import AdminVerificationsPage from '@/pages/admin/AdminVerificationsPage';
-import AdminStudentsPage from '@/pages/admin/AdminStudentsPage';
-import AdminSettingsPage from '@/pages/admin/AdminSettingsPage';
+import ViewCompanyProfilePage from '@/pages/shared/ViewCompanyProfilePage';
+import ViewStudentProfilePage from '@/pages/shared/ViewStudentProfilePage';
+import SearchPage from '@/pages/shared/SearchPage';
 
 export default function App() {
   return (
@@ -77,7 +74,10 @@ export default function App() {
               <Route path="recommendations" element={<AIRecommendationsPage />} />
               <Route path="messages" element={<StudentMessagingPage />} />
               <Route path="notifications" element={<NotificationsPage />} />
+              <Route path="search" element={<SearchPage />} />
               <Route path="profile" element={<StudentProfilePage />} />
+              <Route path="companies/:id" element={<ViewCompanyProfilePage />} />
+              <Route path="students/:id" element={<ViewStudentProfilePage />} />
               <Route path="resume" element={<StudentResumePage />} />
               <Route path="settings" element={<SettingsPage />} />
             </Route>
@@ -91,16 +91,10 @@ export default function App() {
               <Route path="applicants" element={<ApplicantsPage />} />
               <Route path="messages" element={<MessagingPage />} />
               <Route path="analytics" element={<CompanyAnalyticsPage />} />
+              <Route path="search" element={<SearchPage />} />
+              <Route path="students/:id" element={<ViewStudentProfilePage />} />
+              <Route path="companies/:id" element={<ViewCompanyProfilePage />} />
               <Route path="settings" element={<CompanySettingsPage />} />
-            </Route>
-
-            {/* Admin */}
-            <Route path="/admin" element={<ProtectedRoute role="admin"><DashboardLayout /></ProtectedRoute>}>
-              <Route index element={<AdminDashboard />} />
-              <Route path="verifications" element={<AdminVerificationsPage />} />
-              <Route path="companies" element={<AdminCompaniesPage />} />
-              <Route path="students" element={<AdminStudentsPage />} />
-              <Route path="settings" element={<AdminSettingsPage />} />
             </Route>
 
             {/* 404 */}

@@ -19,11 +19,6 @@ const adminSchema = new Schema(
     },
     password: { type: String, required: true, minlength: 8, select: false },
     role: { type: String, default: "admin" },
-    settings: {
-      emailNotifications: { type: Boolean, default: true },
-      verificationAlerts: { type: Boolean, default: true },
-      systemAlerts: { type: Boolean, default: true },
-    },
   },
   { timestamps: true }
 );

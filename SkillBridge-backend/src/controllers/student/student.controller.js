@@ -1,8 +1,29 @@
 const mongoose = require("mongoose");
+const fs = require("fs");
+const path = require("path");
 const Student = require("../../models/Student");
 const Opportunity = require("../../models/Opportunity");
 const AppError = require("../../utils/AppError");
 const { success } = require("../../utils/apiResponse");
+
+const UPLOAD_ROOT = path.join(__dirname, "..", "..", "uploads");
+
+function isValidUrl(value) {
+  try {
+    const parsed = new URL(value);
+    return parsed.protocol === "http:" || parsed.protocol === "https:";
+  } catch {
+    return false;
+  }
+}
+
+function removeUploadedFile(fileUrl) {
+  if (!fileUrl || !fileUrl.startsWith("/uploads/")) return;
+  const relative = fileUrl.replace("/uploads/", "");
+  const absolute = path.join(UPLOAD_ROOT, relative);
+  if (!absolute.startsWith(UPLOAD_ROOT)) return;
+  if (fs.existsSync(absolute)) fs.unlinkSync(absolute);
+}
 
 /**
  * GET /api/student/profile
@@ -10,30 +31,6 @@ const { success } = require("../../utils/apiResponse");
 exports.getProfile = (req, res, next) => {
   try {
     return success(res, { message: "Student profile", data: { student: req.user } });
-  } catch (err) {
-    next(err);
-  }
-};
-
-exports.getSettings = (req, res, next) => {
-  try {
-    return success(res, { message: "Student settings", data: { settings: req.user.settings } });
-  } catch (err) {
-    next(err);
-  }
-};
-
-exports.updateSettings = async (req, res, next) => {
-  try {
-    const student = req.user;
-    const { notifications } = req.body;
-    if (notifications && typeof notifications === "object") {
-      for (const key of ["email", "push", "applications", "recommendations", "messages"]) {
-        if (typeof notifications[key] === "boolean") student.settings.notifications[key] = notifications[key];
-      }
-    }
-    await student.save();
-    return success(res, { message: "Student settings updated", data: { settings: student.settings } });
   } catch (err) {
     next(err);
   }
@@ -49,7 +46,7 @@ exports.updateProfile = async (req, res, next) => {
     const student = req.user;
     const {
       bio, phone, skills, avatarUrl,
-      education, experience, certifications, achievements, portfolio,
+      education, experience, certifications, achievements, portfolio, socialLinks,
     } = req.body;
 
     if (bio !== undefined) student.bio = bio;
@@ -61,10 +58,57 @@ exports.updateProfile = async (req, res, next) => {
     if (Array.isArray(certifications)) student.certifications = certifications;
     if (Array.isArray(achievements)) student.achievements = achievements;
     if (Array.isArray(portfolio)) student.portfolio = portfolio;
+    if (socialLinks && typeof socialLinks === "object") {
+      const keys = ["linkedin", "github", "facebook", "portfolio", "website"];
+      keys.forEach((key) => {
+        if (socialLinks[key] === undefined) return;
+        const rawValue = String(socialLinks[key] || "").trim();
+        if (!rawValue) {
+          student.socialLinks[key] = "";
+          return;
+        }
+        if (!isValidUrl(rawValue)) {
+          throw new AppError(`${key} must be a valid URL.`, 422);
+        }
+        student.socialLinks[key] = rawValue;
+      });
+    }
 
     await student.save();
 
     return success(res, { message: "Profile updated", data: { student } });
+  } catch (err) {
+    next(err);
+  }
+};
+
+exports.uploadAvatar = async (req, res, next) => {
+  try {
+    const file = req.file;
+    if (!file) return next(new AppError("Avatar file is required.", 422));
+
+    const student = req.user;
+    if (student.avatarUrl) removeUploadedFile(student.avatarUrl);
+    student.avatarUrl = `/uploads/avatars/${file.filename}`;
+    await student.save();
+
+    return success(res, {
+      message: "Profile picture uploaded",
+      data: { avatarUrl: student.avatarUrl },
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+exports.deleteAvatar = async (req, res, next) => {
+  try {
+    const student = req.user;
+    if (student.avatarUrl) removeUploadedFile(student.avatarUrl);
+    student.avatarUrl = "";
+    await student.save();
+
+    return success(res, { message: "Profile picture removed", data: { avatarUrl: "" } });
   } catch (err) {
     next(err);
   }
@@ -86,6 +130,22 @@ exports.uploadResume = async (req, res, next) => {
     return success(res, {
       message: "Resume uploaded",
       data: { resumeUrl: student.resumeUrl },
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+exports.deleteResume = async (req, res, next) => {
+  try {
+    const student = req.user;
+    if (student.resumeUrl) removeUploadedFile(student.resumeUrl);
+    student.resumeUrl = "";
+    await student.save();
+
+    return success(res, {
+      message: "Resume removed",
+      data: { resumeUrl: "" },
     });
   } catch (err) {
     next(err);

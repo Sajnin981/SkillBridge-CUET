@@ -8,9 +8,6 @@ const router = express.Router();
 
 router.use(protect, restrict("admin"));
 
-router.get("/settings", controller.getSettings);
-router.put("/settings", controller.updateSettings);
-
 // Verification queue
 router.get("/verifications", controller.listVerifications);
 router.get("/verifications/:role/:id", controller.getVerification);

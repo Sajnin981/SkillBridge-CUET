@@ -66,7 +66,7 @@ exports.resumeAnalysis = async (req, res, next) => {
     const start = Date.now();
     const resumeText = req.body.resumeText || "";
     const skills = req.user.skills || [];
-    const profileSections = [req.user.bio, req.user.education?.length, req.user.experience?.length, req.user.projects?.length].filter(Boolean).length;
+    const profileSections = [req.user.bio, req.user.education?.length, req.user.experience?.length, req.user.portfolio?.length].filter(Boolean).length;
     const score = Math.min(100, 35 + skills.length * 8 + profileSections * 8 + (resumeText.length >= 200 ? 10 : 0));
     const analysis = {
       score,

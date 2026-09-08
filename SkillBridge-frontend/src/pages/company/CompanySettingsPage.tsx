@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Building2, Bell, Lock } from 'lucide-react';
+import { Building2, Lock } from 'lucide-react';
 import { PageContainer } from '@/components/layout/DashboardLayout';
 import { Card, CardHeader } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -8,11 +8,10 @@ import { SkeletonCard } from '@/components/ui/Skeleton';
 import { useToast } from '@/components/ui/Toast';
 import { companyService } from '@/services/companyService';
 import { authService } from '@/services/authService';
-import type { BackendCompany, BackendCompanySettings } from '@/api/types';
+import type { BackendCompany } from '@/api/types';
 
 const sections = [
   { id: 'company', label: 'Company Info', icon: Building2 },
-  { id: 'notifications', label: 'Notifications', icon: Bell },
   { id: 'security', label: 'Security', icon: Lock },
 ];
 
@@ -22,16 +21,13 @@ export default function CompanySettingsPage() {
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState<BackendCompany | null>(null);
   const [profileDraft, setProfileDraft] = useState({ industry: '', website: '', address: '', size: '', founded: '', description: '' });
-  const [settings, setSettings] = useState<BackendCompanySettings | null>(null);
   const [passwordDraft, setPasswordDraft] = useState({ current: '', next: '', confirm: '' });
   const [savingProfile, setSavingProfile] = useState(false);
-  const [savingSettings, setSavingSettings] = useState(false);
 
   useEffect(() => {
-    Promise.all([companyService.getRawProfile(), companyService.getSettings()])
-      .then(([rawProfile, rawSettings]) => {
+    companyService.getRawProfile()
+      .then((rawProfile) => {
         setProfile(rawProfile);
-        setSettings(rawSettings);
         if (rawProfile) {
           setProfileDraft({
             industry: rawProfile.industry || '',
@@ -57,20 +53,6 @@ export default function CompanySettingsPage() {
       toast({ title: 'Could not save company information', variant: 'error' });
     } finally {
       setSavingProfile(false);
-    }
-  };
-
-  const saveSettings = async () => {
-    if (!settings) return;
-    setSavingSettings(true);
-    try {
-      const updated = await companyService.updateSettings(settings);
-      setSettings(updated);
-      toast({ title: 'Notification preferences saved', variant: 'success' });
-    } catch {
-      toast({ title: 'Could not save preferences', variant: 'error' });
-    } finally {
-      setSavingSettings(false);
     }
   };
 
@@ -119,28 +101,6 @@ export default function CompanySettingsPage() {
                 </div>
                 <Field label="About"><Textarea value={profileDraft.description} onChange={(e) => setProfileDraft({ ...profileDraft, description: e.target.value })} /></Field>
                 <Button onClick={saveProfile} disabled={savingProfile}>{savingProfile ? 'Saving…' : 'Save changes'}</Button>
-              </div>
-            </Card>
-          )}
-
-          {active === 'notifications' && settings && (
-            <Card>
-              <CardHeader title="Notification Preferences" />
-              <div className="space-y-3">
-                {([
-                  { key: 'newApplicants', label: 'New applicant alerts', desc: 'Get notified when someone applies' },
-                  { key: 'dailyDigest', label: 'Daily digest', desc: 'Summary of activity each day' },
-                  { key: 'messages', label: 'Message notifications', desc: 'New messages from candidates' },
-                  { key: 'weeklyReport', label: 'Weekly report', desc: 'Hiring metrics summary' },
-                ] as const).map((p) => (
-                  <div key={p.key} className="flex items-center justify-between rounded-xl border border-ink-100 p-4">
-                    <div><p className="text-sm font-medium text-ink-700">{p.label}</p><p className="text-xs text-ink-400">{p.desc}</p></div>
-                    <button onClick={() => setSettings({ ...settings, notifications: { ...settings.notifications, [p.key]: !settings.notifications[p.key] } })} className={`relative h-6 w-11 rounded-full transition ${settings.notifications[p.key] ? 'bg-brand-600' : 'bg-ink-200'}`}>
-                      <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition ${settings.notifications[p.key] ? 'left-[22px]' : 'left-0.5'}`} />
-                    </button>
-                  </div>
-                ))}
-                <Button onClick={saveSettings} disabled={savingSettings}>{savingSettings ? 'Saving…' : 'Save preferences'}</Button>
               </div>
             </Card>
           )}

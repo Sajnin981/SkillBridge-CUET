@@ -69,10 +69,6 @@ export default function OpportunityDetailsPage() {
 
   const submitApplication = () => {
     if (!id) return;
-    if (!profileResumeUrl && !resumeFile) {
-      toast({ title: 'Resume required', description: 'Upload a PDF resume before submitting this application.', variant: 'error' });
-      return;
-    }
     setApplying(true);
     applicationService.apply(id, { coverLetter }, resumeFile).then(() => {
       setApplied(true);
@@ -228,8 +224,8 @@ export default function OpportunityDetailsPage() {
           </div>
           <div className="rounded-xl border border-ink-100 p-4">
             <p className="text-sm font-semibold text-ink-800">Resume</p>
-            <p className="mt-1 text-xs text-ink-500">{profileResumeUrl ? 'Your uploaded resume will be attached automatically.' : 'Upload a PDF resume to apply.'}</p>
-            {!profileResumeUrl && <input type="file" accept=".pdf,application/pdf" onChange={(event) => setResumeFile(event.target.files?.[0])} className="mt-3 w-full text-sm text-ink-600" />}
+            <p className="mt-1 text-xs text-ink-500">{profileResumeUrl ? 'Your uploaded resume will be attached automatically, or you can attach another one.' : 'Resume is optional. Attach a PDF only if you want to include one.'}</p>
+            <input type="file" accept=".pdf,application/pdf" onChange={(event) => setResumeFile(event.target.files?.[0])} className="mt-3 w-full text-sm text-ink-600" />
             {resumeFile && <p className="mt-2 text-xs text-success-600">Selected: {resumeFile.name}</p>}
           </div>
           <div>

@@ -9,6 +9,7 @@ export type BackendOpportunityType =
   | 'freelancing';
 
 export type BackendApplicationStatus =
+  | 'new'
   | 'pending'
   | 'shortlisted'
   | 'rejected'
@@ -31,6 +32,13 @@ export interface BackendStudent {
   avatarUrl?: string;
   bio?: string;
   skills?: string[];
+  socialLinks?: {
+    linkedin?: string;
+    github?: string;
+    facebook?: string;
+    portfolio?: string;
+    website?: string;
+  };
   education?: BackendEducation[];
   experience?: BackendExperience[];
   certifications?: BackendCertification[];
@@ -61,6 +69,12 @@ export interface BackendCompany {
   logoUrl?: string;
   tradeLicenseUrl: string;
   description?: string;
+  socialLinks?: {
+    linkedin?: string;
+    github?: string;
+    facebook?: string;
+    website?: string;
+  };
   achievements?: string[];
   projects?: { title: string; description?: string; link?: string }[];
   status: BackendAccountStatus;
@@ -148,10 +162,13 @@ export interface BackendNotification {
   _id: string;
   recipient: string;
   recipientModel: string;
+  actor?: string;
+  actorModel?: string;
   title: string;
   body: string;
   type?: string;
   link?: string;
+  postId?: string;
   opportunityId?: string;
   applicationId?: string;
   isRead: boolean;

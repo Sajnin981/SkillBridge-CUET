@@ -3,7 +3,6 @@ import axios, { type AxiosInstance, AxiosError } from 'axios';
 export type {
   BackendStudent,
   BackendCompany,
-  BackendCompanySettings,
   BackendOpportunity,
   BackendApplication,
   BackendConversation,
@@ -16,9 +15,19 @@ const TOKEN_KEY = 'skillbridge_token';
 const AUTH_KEY = 'skillbridge_auth';
 
 export const api: AxiosInstance = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5000/api',
+  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:8080/api',
   timeout: 15000,
 });
+
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api';
+const API_ORIGIN = API_BASE_URL.replace(/\/api\/?$/, '');
+
+export function resolveAssetUrl(src?: string): string {
+  if (!src) return '';
+  if (src.startsWith('http://') || src.startsWith('https://')) return src;
+  if (src.startsWith('/')) return `${API_ORIGIN}${src}`;
+  return `${API_ORIGIN}/${src}`;
+}
 
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem(TOKEN_KEY);

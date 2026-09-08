@@ -1,4 +1,6 @@
 import { cn, colorFromString, initials } from '@/lib/utils';
+import { resolveAssetUrl } from '@/api/axios';
+import { useState } from 'react';
 
 interface AvatarProps {
   name: string;
@@ -17,6 +19,9 @@ const sizes = {
 };
 
 export function Avatar({ name, src, size = 'md', className, ring }: AvatarProps) {
+  const [failed, setFailed] = useState(false);
+  const normalizedSrc = src ? resolveAssetUrl(src) : '';
+  const showImage = Boolean(normalizedSrc) && !failed;
   const color = colorFromString(name);
   return (
     <div
@@ -26,9 +31,9 @@ export function Avatar({ name, src, size = 'md', className, ring }: AvatarProps)
         ring && 'ring-2 ring-white ring-offset-2 ring-offset-ink-100',
         className,
       )}
-      style={src ? undefined : { backgroundColor: color }}
+      style={showImage ? undefined : { backgroundColor: color }}
     >
-      {src ? <img src={src} alt={name} className="h-full w-full rounded-full object-cover" /> : initials(name)}
+      {showImage ? <img src={normalizedSrc} alt={name} onError={() => setFailed(true)} className="h-full w-full rounded-full object-cover" /> : initials(name)}
     </div>
   );
 }

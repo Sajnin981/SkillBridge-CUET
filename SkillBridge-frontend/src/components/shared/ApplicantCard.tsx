@@ -38,16 +38,16 @@ export function ApplicantCard({ applicant, onView, onShortlist, onReject, showAc
 
       <div className="mt-3 grid grid-cols-3 gap-2 rounded-xl bg-ink-50 p-3 text-center">
         <div>
-          <p className="text-lg font-bold text-ink-800">{applicant.cgpa}</p>
-          <p className="text-[11px] text-ink-400">CGPA</p>
+          <p className="text-lg font-bold text-ink-800">{applicant.department || 'N/A'}</p>
+          <p className="text-[11px] text-ink-400">Department</p>
         </div>
         <div>
           <p className="text-lg font-bold text-brand-600">{applicant.matchScore}%</p>
           <p className="text-[11px] text-ink-400">Match</p>
         </div>
         <div>
-          <p className="text-lg font-bold text-accent-600">{applicant.resumeScore}</p>
-          <p className="text-[11px] text-ink-400">Resume</p>
+          <p className="text-lg font-bold text-accent-600">{new Date(applicant.appliedAt).toLocaleDateString()}</p>
+          <p className="text-[11px] text-ink-400">Applied</p>
         </div>
       </div>
 

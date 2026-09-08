@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { Pencil, Upload, Plus, Github, Linkedin, Globe, Award, FolderGit2, GraduationCap, Briefcase, FileText, CheckCircle2, User } from 'lucide-react';
+import { useSearchParams } from 'react-router-dom';
+import { Pencil, Upload, Github, Linkedin, Globe, GraduationCap, Briefcase, FileText, User, Trash2, Facebook, Plus } from 'lucide-react';
 import { PageContainer } from '@/components/layout/DashboardLayout';
 import { Card, CardHeader } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -12,19 +13,24 @@ import { SkeletonCard } from '@/components/ui/Skeleton';
 import { useToast } from '@/components/ui/Toast';
 import { useAuth } from '@/context/AuthContext';
 import { studentService } from '@/services/studentService';
+import { PostFeed } from '@/components/shared/PostFeed';
 import { api } from '@/api/axios';
 import type { StudentProfile } from '@/lib/types';
 
 export default function StudentProfilePage() {
+  const [searchParams] = useSearchParams();
+  const focusPostId = searchParams.get('postId') || undefined;
   const { user } = useAuth();
   const { toast } = useToast();
   const [editOpen, setEditOpen] = useState(false);
   const [profile, setProfile] = useState<StudentProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [editForm, setEditForm] = useState({ bio: '', phone: '', skills: '' });
+  const [editForm, setEditForm] = useState({ bio: '', phone: '', skills: '', linkedin: '', github: '', facebook: '', portfolio: '', website: '' });
   const fileRef = useRef<HTMLInputElement>(null);
+  const avatarRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
+  const [avatarUploading, setAvatarUploading] = useState(false);
 
   const openResume = async () => {
     if (!profile?.resumeUrl) return;
@@ -53,7 +59,16 @@ export default function StudentProfilePage() {
     studentService.getProfile().then((p) => {
       setProfile(p);
       if (p) {
-        setEditForm({ bio: p.bio, phone: p.phone, skills: p.skills.map((s) => s.name).join(', ') });
+        setEditForm({
+          bio: p.bio,
+          phone: p.phone,
+          skills: p.skills.map((s) => s.name).join(', '),
+          linkedin: p.social.linkedin || '',
+          github: p.social.github || '',
+          facebook: p.social.facebook || '',
+          portfolio: p.social.portfolio || '',
+          website: p.social.website || '',
+        });
       }
       setLoading(false);
     }).catch(() => setLoading(false));
@@ -62,7 +77,18 @@ export default function StudentProfilePage() {
   const handleSave = () => {
     setSaving(true);
     const skills = editForm.skills.split(',').map((s) => s.trim()).filter(Boolean);
-    studentService.updateProfile({ bio: editForm.bio, phone: editForm.phone, skills }).then((p) => {
+    studentService.updateProfile({
+      bio: editForm.bio,
+      phone: editForm.phone,
+      skills,
+      socialLinks: {
+        linkedin: editForm.linkedin,
+        github: editForm.github,
+        facebook: editForm.facebook,
+        portfolio: editForm.portfolio,
+        website: editForm.website,
+      },
+    }).then((p) => {
       setProfile(p);
       setSaving(false);
       setEditOpen(false);
@@ -71,6 +97,40 @@ export default function StudentProfilePage() {
       setSaving(false);
       toast({ title: 'Failed to update profile', variant: 'error' });
     });
+  };
+
+  const uploadAvatar = async (file?: File) => {
+    if (!file) return;
+    setAvatarUploading(true);
+    try {
+      const result = await studentService.uploadAvatar(file);
+      setProfile((current) => current ? { ...current, avatar: result.avatarUrl } : current);
+      toast({ title: 'Profile picture updated', variant: 'success' });
+    } catch {
+      toast({ title: 'Could not upload profile picture', variant: 'error' });
+    } finally {
+      setAvatarUploading(false);
+    }
+  };
+
+  const deleteAvatar = async () => {
+    try {
+      await studentService.deleteAvatar();
+      setProfile((current) => current ? { ...current, avatar: '' } : current);
+      toast({ title: 'Profile picture removed', variant: 'success' });
+    } catch {
+      toast({ title: 'Could not remove profile picture', variant: 'error' });
+    }
+  };
+
+  const deleteResume = async () => {
+    try {
+      await studentService.deleteResume();
+      setProfile((current) => current ? { ...current, resumeUrl: '' } : current);
+      toast({ title: 'Resume removed', variant: 'success' });
+    } catch {
+      toast({ title: 'Could not remove resume', variant: 'error' });
+    }
   };
 
   if (loading) {
@@ -83,7 +143,7 @@ export default function StudentProfilePage() {
         <div className="h-24 bg-gradient-to-r from-brand-700 to-brand-600" />
         <div className="px-5 pb-5">
           <div className="-mt-10 flex items-end justify-between">
-            <Avatar name={profile?.name ?? user?.name ?? 'User'} size="xl" ring />
+            <Avatar name={profile?.name ?? user?.name ?? 'User'} src={profile?.avatar} size="xl" ring />
             <Button variant="outline" size="sm" onClick={() => setEditOpen(true)}><Pencil className="h-3.5 w-3.5" />Edit</Button>
           </div>
           <div className="mt-3">
@@ -110,63 +170,23 @@ export default function StudentProfilePage() {
                   <p className="text-xs text-ink-400">{profile.resumeUrl}</p>
                 </div>
                 <Button variant="ghost" size="sm" onClick={() => openResume().catch(() => toast({ title: 'Could not open resume', variant: 'error' }))}>View</Button>
+                <Button variant="ghost" size="sm" onClick={deleteResume}><Trash2 className="h-3.5 w-3.5" />Delete</Button>
               </div>
             ) : (
               <EmptyState icon={<FileText className="h-6 w-6" />} title="No resume uploaded" description="Upload your CV to apply for opportunities and unlock AI recommendations." action={<Button size="sm" onClick={() => fileRef.current?.click()}><Upload className="h-3.5 w-3.5" />Upload Resume</Button>} />
             )}
           </Card>
 
-          <Card>
-            <CardHeader title="Projects" action={<Button variant="outline" size="sm"><Plus className="h-3.5 w-3.5" />Add</Button>} />
-            {profile?.projects && profile.projects.length > 0 ? (
-              <div className="space-y-3">
-                {profile.projects.map((p, i) => (
-                  <div key={i} className="rounded-xl border border-ink-100 p-4">
-                    <p className="text-sm font-semibold text-ink-800">{p.title}</p>
-                    <p className="mt-1 text-xs text-ink-500">{p.description}</p>
-                    {p.link && <a href={p.link} className="mt-1 text-xs text-brand-600 hover:underline">{p.link}</a>}
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <EmptyState icon={<FolderGit2 className="h-6 w-6" />} title="No projects yet" description="Add your projects to showcase your work to recruiters." action={<Button size="sm"><Plus className="h-3.5 w-3.5" />Add Project</Button>} />
-            )}
-          </Card>
-
-          <Card>
-            <CardHeader title="Achievements" action={<Button variant="outline" size="sm"><Plus className="h-3.5 w-3.5" />Add</Button>} />
-            {profile?.achievements && profile.achievements.length > 0 ? (
-              <div className="space-y-2">
-                {profile.achievements.map((a, i) => (
-                  <div key={i} className="flex items-start gap-2.5 rounded-lg bg-ink-50 p-3">
-                    <Award className="mt-0.5 h-4 w-4 shrink-0 text-accent-500" />
-                    <p className="text-sm text-ink-700">{a}</p>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <EmptyState icon={<Award className="h-6 w-6" />} title="No achievements added" description="Highlight your awards and accomplishments." />
-            )}
-          </Card>
-
-          <Card>
-            <CardHeader title="Certifications" action={<Button variant="outline" size="sm"><Plus className="h-3.5 w-3.5" />Add</Button>} />
-            {profile?.certifications && profile.certifications.length > 0 ? (
-              <div className="space-y-2">
-                {profile.certifications.map((c, i) => (
-                  <div key={i} className="flex items-start gap-2.5 rounded-lg bg-ink-50 p-3">
-                    <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-success-500" />
-                    <div>
-                      <p className="text-sm font-medium text-ink-700">{c.name}</p>
-                      <p className="text-xs text-ink-400">{c.issuer}{c.year && ` · ${c.year}`}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <EmptyState icon={<CheckCircle2 className="h-6 w-6" />} title="No certifications" description="Add your professional certifications." />
-            )}
-          </Card>
+          {user && (
+            <PostFeed
+              myId={user.id}
+              myRole="student"
+              authorId={user.id}
+              authorType="student"
+              canCreate
+              focusPostId={focusPostId}
+            />
+          )}
 
           <Card>
             <CardHeader title="Education" />
@@ -229,10 +249,11 @@ export default function StudentProfilePage() {
 
           <Card>
             <CardHeader title="Social Links" />
-            <div className="flex gap-2">
-              <Button variant="outline" size="icon"><Github className="h-4 w-4" /></Button>
-              <Button variant="outline" size="icon"><Linkedin className="h-4 w-4" /></Button>
-              <Button variant="outline" size="icon"><Globe className="h-4 w-4" /></Button>
+            <div className="space-y-2 text-sm">
+              <a href={profile?.social.linkedin || '#'} target="_blank" rel="noreferrer" className={`flex items-center gap-2 ${profile?.social.linkedin ? 'text-brand-700 hover:underline' : 'pointer-events-none text-ink-400'}`}><Linkedin className="h-4 w-4" />{profile?.social.linkedin || 'No LinkedIn added'}</a>
+              <a href={profile?.social.github || '#'} target="_blank" rel="noreferrer" className={`flex items-center gap-2 ${profile?.social.github ? 'text-brand-700 hover:underline' : 'pointer-events-none text-ink-400'}`}><Github className="h-4 w-4" />{profile?.social.github || 'No GitHub added'}</a>
+              <a href={profile?.social.facebook || '#'} target="_blank" rel="noreferrer" className={`flex items-center gap-2 ${profile?.social.facebook ? 'text-brand-700 hover:underline' : 'pointer-events-none text-ink-400'}`}><Facebook className="h-4 w-4" />{profile?.social.facebook || 'No Facebook added'}</a>
+              <a href={profile?.social.portfolio || profile?.social.website || '#'} target="_blank" rel="noreferrer" className={`flex items-center gap-2 ${(profile?.social.portfolio || profile?.social.website) ? 'text-brand-700 hover:underline' : 'pointer-events-none text-ink-400'}`}><Globe className="h-4 w-4" />{profile?.social.portfolio || profile?.social.website || 'No website added'}</a>
             </div>
           </Card>
         </div>
@@ -242,8 +263,15 @@ export default function StudentProfilePage() {
         footer={<><Button variant="outline" onClick={() => setEditOpen(false)}>Cancel</Button><Button onClick={handleSave} disabled={saving}>{saving ? 'Saving…' : 'Save changes'}</Button></>}>
         <div className="space-y-4">
           <div className="flex items-center gap-4">
-            <Avatar name={profile?.name ?? user?.name ?? 'U'} size="xl" />
-            <div><Button variant="outline" size="sm"><Upload className="h-3.5 w-3.5" />Upload photo</Button><p className="mt-1.5 text-xs text-ink-400">JPG or PNG, max 2MB</p></div>
+            <Avatar name={profile?.name ?? user?.name ?? 'U'} src={profile?.avatar} size="xl" />
+            <div>
+              <input ref={avatarRef} type="file" accept=".jpg,.jpeg,.png,.webp" className="hidden" onChange={(event) => uploadAvatar(event.target.files?.[0])} />
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm" onClick={() => avatarRef.current?.click()} disabled={avatarUploading}><Upload className="h-3.5 w-3.5" />{avatarUploading ? 'Uploading…' : 'Upload photo'}</Button>
+                <Button variant="outline" size="sm" onClick={deleteAvatar}><Trash2 className="h-3.5 w-3.5" />Delete</Button>
+              </div>
+              <p className="mt-1.5 text-xs text-ink-400">JPG, PNG, or WEBP</p>
+            </div>
           </div>
           <div className="grid gap-4 sm:grid-cols-2">
             <Field label="Full Name"><Input defaultValue={profile?.name ?? user?.name} disabled /></Field>
@@ -254,6 +282,12 @@ export default function StudentProfilePage() {
           </div>
           <Field label="Skills (comma-separated)"><Input value={editForm.skills} onChange={(e) => setEditForm({ ...editForm, skills: e.target.value })} placeholder="React, Node.js, Python" /></Field>
           <Field label="Bio"><Textarea value={editForm.bio} onChange={(e) => setEditForm({ ...editForm, bio: e.target.value })} placeholder="Tell recruiters about yourself…" /></Field>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Field label="LinkedIn URL"><Input value={editForm.linkedin} onChange={(e) => setEditForm({ ...editForm, linkedin: e.target.value })} placeholder="https://linkedin.com/in/username" /></Field>
+            <Field label="GitHub URL"><Input value={editForm.github} onChange={(e) => setEditForm({ ...editForm, github: e.target.value })} placeholder="https://github.com/username" /></Field>
+            <Field label="Facebook URL"><Input value={editForm.facebook} onChange={(e) => setEditForm({ ...editForm, facebook: e.target.value })} placeholder="https://facebook.com/username" /></Field>
+            <Field label="Portfolio URL"><Input value={editForm.portfolio} onChange={(e) => setEditForm({ ...editForm, portfolio: e.target.value })} placeholder="https://your-portfolio.com" /></Field>
+          </div>
         </div>
       </Modal>
     </PageContainer>

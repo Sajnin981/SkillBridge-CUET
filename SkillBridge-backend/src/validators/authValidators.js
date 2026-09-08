@@ -6,7 +6,6 @@ const studentRegister = [
     .trim()
     .notEmpty().withMessage("Email is required")
     .isEmail().withMessage("Valid email is required")
-    .matches(/@(?:[a-z0-9-]+\.)*cuet\.ac\.bd$/i).withMessage("Must be a CUET email (@cuet.ac.bd)")
     .normalizeEmail(),
   body("studentId").trim().notEmpty().withMessage("Student ID is required"),
   body("department").trim().notEmpty().withMessage("Department is required"),

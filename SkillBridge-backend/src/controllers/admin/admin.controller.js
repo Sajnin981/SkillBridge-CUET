@@ -12,27 +12,6 @@ const { success } = require("../../utils/apiResponse");
 
 const MODEL_BY_ROLE = { student: Student, company: Company };
 
-exports.getSettings = (req, res, next) => {
-  try {
-    return success(res, { message: "Admin settings", data: { settings: req.user.settings } });
-  } catch (err) {
-    next(err);
-  }
-};
-
-exports.updateSettings = async (req, res, next) => {
-  try {
-    const admin = req.user;
-    for (const key of ["emailNotifications", "verificationAlerts", "systemAlerts"]) {
-      if (typeof req.body[key] === "boolean") admin.settings[key] = req.body[key];
-    }
-    await admin.save();
-    return success(res, { message: "Admin settings updated", data: { settings: admin.settings } });
-  } catch (err) {
-    next(err);
-  }
-};
-
 /**
  * GET /api/admin/verifications
  * Query: role=student|company, status=pending|approved|rejected, page, limit

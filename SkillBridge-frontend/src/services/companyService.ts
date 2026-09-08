@@ -1,4 +1,4 @@
-import { api, type ApiEnvelope, type BackendCompany, type BackendCompanySettings, type BackendOpportunity, type Pagination } from '@/api/axios';
+import { api, type ApiEnvelope, type BackendCompany, type BackendOpportunity, type Pagination } from '@/api/axios';
 import { mapCompany, mapOpportunity } from '@/api/mappers';
 import type { Company, Opportunity } from '@/lib/types';
 
@@ -31,14 +31,17 @@ export const companyService = {
     return mapCompany(res.data.data.company);
   },
 
-  async getSettings(): Promise<BackendCompanySettings> {
-    const res = await api.get<ApiEnvelope<{ settings: BackendCompanySettings }>>('/company/settings');
-    return res.data.data.settings;
+  async uploadLogo(file: File): Promise<{ logoUrl: string }> {
+    const formData = new FormData();
+    formData.append('logo', file);
+    const res = await api.post<ApiEnvelope<{ logoUrl: string }>>('/company/profile/logo', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return res.data.data;
   },
 
-  async updateSettings(settings: BackendCompanySettings): Promise<BackendCompanySettings> {
-    const res = await api.put<ApiEnvelope<{ settings: BackendCompanySettings }>>('/company/settings', settings);
-    return res.data.data.settings;
+  async deleteLogo(): Promise<void> {
+    await api.delete<ApiEnvelope>('/company/profile/logo');
   },
 
   async createOpportunity(data: Partial<BackendOpportunity>): Promise<Opportunity> {
@@ -74,7 +77,7 @@ export const companyService = {
     return {
       totalOpportunities: opportunities.active,
       totalApplications: applications.total,
-      newApplicants: applications.byStatus.pending || 0,
+      newApplicants: applications.byStatus.new || applications.byStatus.pending || 0,
       shortlisted: applications.byStatus.shortlisted || 0,
       rejected: applications.byStatus.rejected || 0,
     };

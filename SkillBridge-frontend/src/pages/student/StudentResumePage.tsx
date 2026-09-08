@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { FileText, Upload, FileUp, CheckCircle2, GraduationCap, Briefcase, Award, FolderGit2, User } from 'lucide-react';
+import { FileText, Upload, FileUp, CheckCircle2, GraduationCap, Briefcase, Award, FolderGit2, User, Trash2 } from 'lucide-react';
 import { PageContainer } from '@/components/layout/DashboardLayout';
 import { Card, CardHeader } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -22,7 +22,7 @@ export default function StudentResumePage() {
   const [generating, setGenerating] = useState(false);
   const [generatedResumeUrl, setGeneratedResumeUrl] = useState('');
   const [shared, setShared] = useState(false);
-  const [draft, setDraft] = useState({ bio: '', skills: '', education: '', experience: '', certifications: '', achievements: '', portfolio: '' });
+  const [draft, setDraft] = useState({ bio: '', skills: '', education: '', experience: '', certifications: '', achievements: '', specialAchievements: '', portfolio: '' });
   const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -39,6 +39,7 @@ export default function StudentResumePage() {
         experience: p.experience.map((e) => [e.company, e.role, e.start, e.end, e.description].join(' | ')).join('\n'),
         certifications: p.certifications.map((c) => [c.name, c.issuer, c.year].join(' | ')).join('\n'),
         achievements: p.achievements.join('\n'),
+        specialAchievements: '',
         portfolio: p.projects.map((p) => p.title).join('\n'),
       });
       setLoading(false);
@@ -51,12 +52,22 @@ export default function StudentResumePage() {
     setSaving(true);
     const splitLines = (value: string) => value.split('\n').map((line) => line.trim()).filter(Boolean);
     const splitFields = (value: string) => splitLines(value).map((line) => line.split('|').map((part) => part.trim()));
+    const education = splitFields(draft.education)
+      .map(([institution = '', degree = '', field = '', startYear = '', endYear = '']) => ({ institution, degree, field, startYear, endYear }))
+      .filter((item) => item.institution && item.degree);
+    const experience = splitFields(draft.experience)
+      .map(([company = '', position = '', startDate = '', endDate = '', description = '']) => ({ company, position, startDate, endDate, description }))
+      .filter((item) => item.company && item.position);
+    const certifications = splitFields(draft.certifications)
+      .map(([name = '', issuer = '', date = '']) => ({ name, issuer, date }))
+      .filter((item) => item.name);
+
     studentService.updateProfile({
       bio: draft.bio,
       skills: draft.skills.split(',').map((skill) => skill.trim()).filter(Boolean),
-      education: splitFields(draft.education).map(([institution = '', degree = '', field = '', startYear = '', endYear = '']) => ({ institution, degree, field, startYear, endYear })),
-      experience: splitFields(draft.experience).map(([company = '', position = '', startDate = '', endDate = '', description = '']) => ({ company, position, startDate, endDate, description })),
-      certifications: splitFields(draft.certifications).map(([name = '', issuer = '', date = '']) => ({ name, issuer, date })),
+      education,
+      experience,
+      certifications,
       achievements: splitLines(draft.achievements).map((title) => ({ title })),
       portfolio: splitLines(draft.portfolio),
     }).then((updated) => {
@@ -147,6 +158,7 @@ export default function StudentResumePage() {
                 <Field label="Certifications" hint="One per line: name | issuer | date"><Textarea value={draft.certifications} onChange={(e) => updateDraft('certifications', e.target.value)} placeholder="AWS Cloud Practitioner | Amazon | 2025" /></Field>
                 <Field label="Achievements" hint="One achievement per line"><Textarea value={draft.achievements} onChange={(e) => updateDraft('achievements', e.target.value)} placeholder="Dean's list" /></Field>
               </div>
+              <Field label="Special Achievements (optional)" hint="ICPC, rankings, scholarships, awards, certifications, competition results"><Textarea value={draft.specialAchievements} onChange={(e) => updateDraft('specialAchievements', e.target.value)} placeholder="ICPC regional participant\nDean's list\nScholarship recipient" /></Field>
               <Field label="Projects or portfolio items" hint="One project title or portfolio item per line"><Textarea value={draft.portfolio} onChange={(e) => updateDraft('portfolio', e.target.value)} placeholder="Campus marketplace" /></Field>
             </div>
           </Card>
@@ -161,6 +173,7 @@ export default function StudentResumePage() {
                   <p className="text-xs text-ink-400">{profile.resumeUrl}</p>
                 </div>
                 <Button variant="ghost" size="sm" onClick={handleUpload}>Replace</Button>
+                <Button variant="ghost" size="sm" onClick={async () => { try { await studentService.deleteResume(); setProfile((prev) => prev ? { ...prev, resumeUrl: '' } : prev); toast({ title: 'Resume removed', variant: 'success' }); } catch { toast({ title: 'Could not remove resume', variant: 'error' }); } }}><Trash2 className="h-3.5 w-3.5" />Delete</Button>
               </div>
             ) : (
               <EmptyState icon={<FileUp className="h-7 w-7" />} title="No resume uploaded" description="Upload your CV to apply for opportunities." action={<Button onClick={handleUpload} disabled={uploading}><Upload className="h-4 w-4" />{uploading ? 'Uploading…' : 'Upload Resume'}</Button>} />

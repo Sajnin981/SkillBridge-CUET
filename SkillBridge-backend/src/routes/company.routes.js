@@ -1,5 +1,6 @@
 const express = require("express");
 const { protect, restrict, requireApproved } = require("../middlewares/auth");
+const { upload } = require("../middlewares/upload");
 const validate = require("../middlewares/validate");
 const v = require("../validators/opportunityValidators");
 const controller = require("../controllers/company/company.controller");
@@ -10,8 +11,8 @@ router.use(protect, restrict("company"));
 
 router.get("/profile", controller.getProfile);
 router.put("/profile", controller.updateProfile);
-router.get("/settings", controller.getSettings);
-router.put("/settings", controller.updateSettings);
+router.post("/profile/logo", requireApproved, upload.single("logo"), controller.uploadLogo);
+router.delete("/profile/logo", requireApproved, controller.deleteLogo);
 
 router.post(
   "/opportunities",

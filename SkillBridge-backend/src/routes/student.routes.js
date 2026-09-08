@@ -9,14 +9,15 @@ router.use(protect, restrict("student"));
 
 router.get("/profile", controller.getProfile);
 router.put("/profile", controller.updateProfile);
-router.get("/settings", controller.getSettings);
-router.put("/settings", controller.updateSettings);
+router.post("/profile/avatar", requireApproved, upload.single("avatar"), controller.uploadAvatar);
+router.delete("/profile/avatar", requireApproved, controller.deleteAvatar);
 router.post(
   "/resume",
   requireApproved,
   upload.single("resume"),
   controller.uploadResume
 );
+router.delete("/resume", requireApproved, controller.deleteResume);
 
 // Saved opportunities
 router.get("/saved-opportunities", requireApproved, controller.listSavedOpportunities);

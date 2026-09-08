@@ -30,6 +30,12 @@ const companySchema = new Schema(
     logoUrl: { type: String, default: "" },
     tradeLicenseUrl: { type: String, required: true },
     description: { type: String, default: "", maxlength: 2000 },
+    socialLinks: {
+      linkedin: { type: String, trim: true, default: "" },
+      github: { type: String, trim: true, default: "" },
+      facebook: { type: String, trim: true, default: "" },
+      website: { type: String, trim: true, default: "" },
+    },
     achievements: [{ type: String, trim: true }],
     projects: [{
       title: { type: String, required: true, trim: true },
@@ -42,14 +48,6 @@ const companySchema = new Schema(
       default: "pending",
     },
     rejectionReason: { type: String, default: "" },
-    settings: {
-      notifications: {
-        newApplicants: { type: Boolean, default: true },
-        dailyDigest: { type: Boolean, default: true },
-        messages: { type: Boolean, default: true },
-        weeklyReport: { type: Boolean, default: false },
-      },
-    },
   },
   { timestamps: true }
 );

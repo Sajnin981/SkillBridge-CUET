@@ -30,10 +30,11 @@ interface MessagingViewProps {
   conversations: Conversation[];
   messagesByConv: Record<string, Message[]>;
   onSendMessage?: (conversationId: string, text: string) => Promise<void>;
+  initialConversationId?: string | null;
 }
 
-export function MessagingView({ title, emptyTitle, emptyDescription, conversations, messagesByConv, onSendMessage }: MessagingViewProps) {
-  const [activeId, setActiveId] = useState<string | null>(conversations[0]?.id ?? null);
+export function MessagingView({ title, emptyTitle, emptyDescription, conversations, messagesByConv, onSendMessage, initialConversationId }: MessagingViewProps) {
+  const [activeId, setActiveId] = useState<string | null>(initialConversationId && conversations.some((c) => c.id === initialConversationId) ? initialConversationId : conversations[0]?.id ?? null);
   const [messages, setMessages] = useState<Message[]>(activeId ? messagesByConv[activeId] ?? [] : []);
   const [input, setInput] = useState('');
   const [search, setSearch] = useState('');
@@ -45,6 +46,12 @@ export function MessagingView({ title, emptyTitle, emptyDescription, conversatio
       setActiveId(conversations[0].id);
     }
   }, [conversations, activeId]);
+
+  useEffect(() => {
+    if (initialConversationId && conversations.some((c) => c.id === initialConversationId)) {
+      setActiveId(initialConversationId);
+    }
+  }, [initialConversationId, conversations]);
 
   useEffect(() => {
     if (activeId) setMessages(messagesByConv[activeId] ?? []);

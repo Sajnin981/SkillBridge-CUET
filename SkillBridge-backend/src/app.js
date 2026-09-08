@@ -3,6 +3,7 @@ const cors = require("cors");
 const helmet = require("helmet");
 const morgan = require("morgan");
 const cookieParser = require("cookie-parser");
+const path = require("path");
 
 const { apiLimiter } = require("./middlewares/rateLimiter");
 const { errorHandler, notFound } = require("./middlewares/error");
@@ -16,7 +17,16 @@ app.use(
     origin: (origin, callback) => {
       const configuredOrigin = process.env.CLIENT_URL;
       const allowedOrigins = configuredOrigin ? [configuredOrigin] : [];
-      if (!origin || allowedOrigins.includes(origin) || ["http://localhost:5173", "http://127.0.0.1:5173"].includes(origin)) {
+      if (
+        !origin ||
+        allowedOrigins.includes(origin) ||
+        [
+          "http://localhost:5173",
+          "http://127.0.0.1:5173",
+          "http://localhost:5174",
+          "http://127.0.0.1:5174",
+        ].includes(origin)
+      ) {
         return callback(null, true);
       }
       return callback(new Error("Origin is not allowed by CORS"));
@@ -33,6 +43,12 @@ if (process.env.NODE_ENV !== "test") {
 }
 
 app.use(apiLimiter);
+
+// Publicly safe assets. Sensitive documents remain behind /api/files authorization.
+const uploadsRoot = path.join(__dirname, "uploads");
+app.use("/uploads/company-logos", express.static(path.join(uploadsRoot, "company-logos")));
+app.use("/uploads/avatars", express.static(path.join(uploadsRoot, "avatars")));
+app.use("/uploads/post-images", express.static(path.join(uploadsRoot, "post-images")));
 
 // Uploads are served through an authenticated controller, not as public files.
 app.use("/api/files", require("./routes/file.routes"));
@@ -52,6 +68,8 @@ app.use("/api/faqs", require("./routes/faq.routes"));
 app.use("/api", require("./routes/application.routes"));
 app.use("/api/messages", require("./routes/message.routes"));
 app.use("/api/notifications", require("./routes/notification.routes"));
+app.use("/api/posts", require("./routes/post.routes"));
+app.use("/api/profiles", require("./routes/profile.routes"));
 app.use("/api/ai", require("./routes/ai.routes"));
 app.use("/api/admin", require("./routes/admin.routes"));
 app.use("/api/search", require("./routes/search.routes"));

@@ -30,7 +30,7 @@ export const applicationService = {
       const comp = typeof a.company === 'object' ? a.company : null;
       return {
         id: a._id,
-        status: a.status,
+        status: a.status === 'new' ? 'submitted' : a.status,
         stage: opp?.title || 'Application',
         opportunityTitle: opp?.title || 'Opportunity',
         companyName: comp?.companyName || 'Company',

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Bell, CheckCircle2, MessageSquare, Briefcase, Info, LogOut } from 'lucide-react';
+import { Bell, CheckCircle2, MessageSquare, Briefcase, Info, LogOut, Heart } from 'lucide-react';
 import { Avatar } from '@/components/ui/Avatar';
 import { notificationService } from '@/services/notificationService';
 import { timeAgo } from '@/lib/utils';
@@ -10,6 +10,7 @@ const icons = {
   application: CheckCircle2,
   opportunity: Briefcase,
   message: MessageSquare,
+  post: Heart,
   system: Info,
 };
 
@@ -17,6 +18,7 @@ const tones = {
   application: 'bg-success-50 text-success-600',
   opportunity: 'bg-brand-50 text-brand-600',
   message: 'bg-accent-50 text-accent-600',
+  post: 'bg-danger-50 text-danger-600',
   system: 'bg-ink-100 text-ink-500',
 };
 
@@ -114,7 +116,7 @@ export function UserAvatarMenu({ name, avatar, role, onLogout }: UserMenuProps) 
 
   const base = `/${role}`;
   const links = [
-    { label: 'My Profile', to: `${base}/profile` },
+    { label: 'My Profile', to: role === 'admin' ? '/admin' : `${base}/profile` },
     { label: 'Settings', to: `${base}/settings` },
   ];
 

@@ -3,16 +3,6 @@ import { mapStudentProfile } from '@/api/mappers';
 import type { StudentProfile } from '@/lib/types';
 
 export const studentService = {
-  async getSettings() {
-    const res = await api.get<ApiEnvelope<{ settings: StudentSettings }>>('/student/settings');
-    return res.data.data.settings;
-  },
-
-  async updateSettings(settings: StudentSettings) {
-    const res = await api.put<ApiEnvelope<{ settings: StudentSettings }>>('/student/settings', settings);
-    return res.data.data.settings;
-  },
-
   async getProfile(): Promise<StudentProfile | null> {
     const res = await api.get<ApiEnvelope<{ student: BackendStudent }>>('/student/profile');
     return mapStudentProfile(res.data.data.student);
@@ -28,6 +18,13 @@ export const studentService = {
     phone: string;
     skills: string[];
     avatarUrl: string;
+    socialLinks: {
+      linkedin?: string;
+      github?: string;
+      facebook?: string;
+      portfolio?: string;
+      website?: string;
+    };
     education: BackendStudent['education'];
     experience: BackendStudent['experience'];
     certifications: BackendStudent['certifications'];
@@ -47,6 +44,23 @@ export const studentService = {
     return res.data.data;
   },
 
+  async deleteResume(): Promise<void> {
+    await api.delete<ApiEnvelope>('/student/resume');
+  },
+
+  async uploadAvatar(file: File): Promise<{ avatarUrl: string }> {
+    const formData = new FormData();
+    formData.append('avatar', file);
+    const res = await api.post<ApiEnvelope<{ avatarUrl: string }>>('/student/profile/avatar', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return res.data.data;
+  },
+
+  async deleteAvatar(): Promise<void> {
+    await api.delete<ApiEnvelope>('/student/profile/avatar');
+  },
+
   async getSavedOpportunities() {
     const res = await api.get<ApiEnvelope<{ items: unknown[] }>>('/student/saved-opportunities');
     return res.data.data.items;
@@ -62,7 +76,3 @@ export const studentService = {
     return res.data;
   },
 };
-
-export interface StudentSettings {
-  notifications: { email: boolean; push: boolean; applications: boolean; recommendations: boolean; messages: boolean };
-}

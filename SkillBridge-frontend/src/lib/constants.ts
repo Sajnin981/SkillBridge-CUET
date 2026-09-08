@@ -8,15 +8,6 @@ export const testimonials = [
   { name: 'Sadia Islam', role: 'ML Researcher, Telenor Health', avatar: 'SI', quote: 'The AI recommendations surfaced research roles I wouldn\'t have found otherwise. Now I\'m publishing papers.', rating: 5 },
 ];
 
-export const faqs = [
-  { q: 'Who can use SkillBridge CUET?', a: 'Verified CUET students and verified companies. Students apply with their CUET email; companies undergo admin verification before posting.' },
-  { q: 'Is SkillBridge free for students?', a: 'Yes. Students can register, build a profile, upload a resume, and apply to unlimited opportunities at no cost.' },
-  { q: 'How does company verification work?', a: 'After registering, companies submit their profile and verification documents. An admin reviews and approves verified companies, who can then post opportunities.' },
-  { q: 'What are the AI features?', a: 'AI Resume Analysis scores your CV and suggests improvements, AI Recommendations match opportunities to your skills, and AI Candidate Matching ranks applicants for companies.' },
-  { q: 'What types of opportunities are available?', a: 'Internships, full-time jobs, freelancing, research, competitions, scholarships, and part-time roles.' },
-  { q: 'How do I apply to an opportunity?', a: 'Open any opportunity, review the details, and click Apply. Your profile and resume are sent to the company for review.' },
-];
-
 export const platformStats = [
   { label: 'Verified Students', value: 4800, suffix: '+' },
   { label: 'Verified Companies', value: 120, suffix: '+' },

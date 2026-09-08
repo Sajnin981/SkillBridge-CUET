@@ -154,7 +154,7 @@ exports.sendMessage = async (req, res, next) => {
       title: "New message",
       body: `${req.user.fullName || req.user.companyName} sent you a message.`,
       type: "message",
-      link: `/${recipientModel === "Student" ? "student" : "company"}/messages`,
+      link: `/${recipientModel === "Student" ? "student" : "company"}/messages?conversationId=${conversation._id}`,
     });
 
     return success(res, {

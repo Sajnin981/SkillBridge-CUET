@@ -9,8 +9,10 @@ const UPLOAD_ROOT = path.join(__dirname, "..", "uploads");
 const FIELD_MAP = {
   idCard: { folder: "student-ids", types: ["image/jpeg", "image/png", "image/webp", "application/pdf"] },
   resume: { folder: "resumes", types: ["application/pdf"] },
+  avatar: { folder: "avatars", types: ["image/jpeg", "image/png", "image/webp"] },
   logo: { folder: "company-logos", types: ["image/jpeg", "image/png", "image/webp"] },
   tradeLicense: { folder: "trade-licenses", types: ["image/jpeg", "image/png", "image/webp", "application/pdf"] },
+  postImage: { folder: "post-images", types: ["image/jpeg", "image/png", "image/webp"] },
 };
 
 const storage = multer.diskStorage({

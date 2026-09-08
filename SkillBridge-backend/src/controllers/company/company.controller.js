@@ -1,9 +1,30 @@
 const mongoose = require("mongoose");
+const fs = require("fs");
+const path = require("path");
 const Company = require("../../models/Company");
 const Opportunity = require("../../models/Opportunity");
 const Application = require("../../models/Application");
 const AppError = require("../../utils/AppError");
 const { success } = require("../../utils/apiResponse");
+
+const UPLOAD_ROOT = path.join(__dirname, "..", "..", "uploads");
+
+function isValidUrl(value) {
+  try {
+    const parsed = new URL(value);
+    return parsed.protocol === "http:" || parsed.protocol === "https:";
+  } catch {
+    return false;
+  }
+}
+
+function removeUploadedFile(fileUrl) {
+  if (!fileUrl || !fileUrl.startsWith("/uploads/")) return;
+  const relative = fileUrl.replace("/uploads/", "");
+  const absolute = path.join(UPLOAD_ROOT, relative);
+  if (!absolute.startsWith(UPLOAD_ROOT)) return;
+  if (fs.existsSync(absolute)) fs.unlinkSync(absolute);
+}
 
 /**
  * GET /api/company/profile
@@ -21,7 +42,7 @@ exports.getProfile = (req, res, next) => {
  */
 exports.updateProfile = async (req, res, next) => {
   try {
-    const { description, website, industry, address, logoUrl, achievements, projects, size, founded } = req.body;
+    const { description, website, industry, address, logoUrl, achievements, projects, size, founded, socialLinks } = req.body;
     const company = req.user;
 
     if (description !== undefined) company.description = description;
@@ -33,6 +54,21 @@ exports.updateProfile = async (req, res, next) => {
     if (founded !== undefined) company.founded = founded;
     if (Array.isArray(achievements)) company.achievements = achievements;
     if (Array.isArray(projects)) company.projects = projects;
+    if (socialLinks && typeof socialLinks === "object") {
+      const keys = ["linkedin", "github", "facebook", "website"];
+      keys.forEach((key) => {
+        if (socialLinks[key] === undefined) return;
+        const rawValue = String(socialLinks[key] || "").trim();
+        if (!rawValue) {
+          company.socialLinks[key] = "";
+          return;
+        }
+        if (!isValidUrl(rawValue)) {
+          throw new AppError(`${key} must be a valid URL.`, 422);
+        }
+        company.socialLinks[key] = rawValue;
+      });
+    }
 
     await company.save();
     return success(res, { message: "Profile updated", data: { company } });
@@ -41,31 +77,30 @@ exports.updateProfile = async (req, res, next) => {
   }
 };
 
-/**
- * GET /api/company/settings
- */
-exports.getSettings = (req, res, next) => {
+exports.uploadLogo = async (req, res, next) => {
   try {
-    return success(res, { message: "Company settings", data: { settings: req.user.settings } });
+    const file = req.file;
+    if (!file) return next(new AppError("Logo file is required.", 422));
+
+    const company = req.user;
+    if (company.logoUrl) removeUploadedFile(company.logoUrl);
+    company.logoUrl = `/uploads/company-logos/${file.filename}`;
+    await company.save();
+
+    return success(res, { message: "Company logo uploaded", data: { logoUrl: company.logoUrl } });
   } catch (err) {
     next(err);
   }
 };
 
-/**
- * PUT /api/company/settings
- */
-exports.updateSettings = async (req, res, next) => {
+exports.deleteLogo = async (req, res, next) => {
   try {
     const company = req.user;
-    const { notifications } = req.body;
-    if (notifications && typeof notifications === "object") {
-      for (const key of ["newApplicants", "dailyDigest", "messages", "weeklyReport"]) {
-        if (typeof notifications[key] === "boolean") company.settings.notifications[key] = notifications[key];
-      }
-    }
+    if (company.logoUrl) removeUploadedFile(company.logoUrl);
+    company.logoUrl = "";
     await company.save();
-    return success(res, { message: "Company settings updated", data: { settings: company.settings } });
+
+    return success(res, { message: "Company logo removed", data: { logoUrl: "" } });
   } catch (err) {
     next(err);
   }
@@ -104,9 +139,12 @@ exports.listPublicCompanies = async (req, res, next) => {
 exports.getPublicCompany = async (req, res, next) => {
   try {
     if (!mongoose.isValidObjectId(req.params.id)) return next(new AppError("Invalid company ID.", 400));
-    const company = await Company.findOne({ _id: req.params.id, status: "approved" }).select("companyName website industry address logoUrl description achievements projects status createdAt updatedAt");
+    const [company, opportunities] = await Promise.all([
+      Company.findOne({ _id: req.params.id, status: "approved" }).select("companyName website industry address logoUrl description achievements projects socialLinks status createdAt updatedAt"),
+      Opportunity.find({ company: req.params.id, isActive: true, status: "open" }).select("_id title type location deadline tags createdAt").sort("-createdAt").limit(20),
+    ]);
     if (!company) return next(new AppError("Company not found.", 404));
-    return success(res, { message: "Company profile", data: { company } });
+    return success(res, { message: "Company profile", data: { company, opportunities } });
   } catch (err) {
     next(err);
   }

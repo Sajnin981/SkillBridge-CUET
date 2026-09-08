@@ -1,23 +1,21 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Mail, Lock, Eye, EyeOff, GraduationCap, Building2, ShieldCheck } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff, GraduationCap, Building2 } from 'lucide-react';
 import { AuthLayout } from '@/components/layout/AuthLayout';
 import { Button } from '@/components/ui/Button';
 import { Field, Input } from '@/components/ui/Input';
 import { useToast } from '@/components/ui/Toast';
 import { useAuth } from '@/context/AuthContext';
-import type { Role } from '@/lib/types';
 
 import { normalizeError } from '@/api/axios';
 
-const roleConfig: { role: Role; icon: typeof GraduationCap; label: string; placeholder: string }[] = [
-  { role: 'student', icon: GraduationCap, label: 'Student', placeholder: 'you@cuet.ac.bd' },
+const roleConfig: { role: 'student' | 'company'; icon: typeof GraduationCap; label: string; placeholder: string }[] = [
+  { role: 'student', icon: GraduationCap, label: 'Student', placeholder: 'you@example.com' },
   { role: 'company', icon: Building2, label: 'Company', placeholder: 'company@email.com' },
-  { role: 'admin', icon: ShieldCheck, label: 'Admin', placeholder: 'admin@skillbridge.edu' },
 ];
 
 export default function LoginPage() {
-  const [role, setRole] = useState<Role>('student');
+  const [role, setRole] = useState<'student' | 'company'>('student');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPwd, setShowPwd] = useState(false);
@@ -42,8 +40,8 @@ export default function LoginPage() {
   };
 
   return (
-    <AuthLayout side={role === 'admin' ? 'company' : role} title="Welcome back" subtitle="Sign in to your SkillBridge account to continue.">
-      <div className="mb-6 grid grid-cols-3 gap-2 rounded-xl bg-ink-100 p-1">
+    <AuthLayout side={role} title="Welcome back" subtitle="Sign in to your SkillBridge account to continue.">
+      <div className="mb-6 grid grid-cols-2 gap-2 rounded-xl bg-ink-100 p-1">
         {roleConfig.map(({ role: r, icon: Icon, label }) => (
           <button key={r} onClick={() => { setRole(r); setEmail(''); setPassword(''); }} className={`flex items-center justify-center gap-1.5 rounded-lg py-2.5 text-sm font-medium transition ${role === r ? 'bg-white text-brand-700 shadow-sm' : 'text-ink-500'}`}>
             <Icon className="h-4 w-4" />{label}

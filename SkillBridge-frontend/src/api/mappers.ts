@@ -45,7 +45,13 @@ export function mapStudentProfile(s: BackendStudent): StudentProfile {
     education: (s.education || []).map((e) => ({ institution: e.institution, degree: e.degree, field: e.field || '', start: e.startYear || '', end: e.endYear || '', grade: e.grade || '' })),
     experience: (s.experience || []).map((e) => ({ company: e.company, role: e.position, start: e.startDate || '', end: e.endDate || '', description: e.description || '' })),
     resumeUrl: s.sharedResumeUrl || s.resumeUrl,
-    social: {},
+    social: {
+      linkedin: s.socialLinks?.linkedin || '',
+      github: s.socialLinks?.github || '',
+      facebook: s.socialLinks?.facebook || '',
+      portfolio: s.socialLinks?.portfolio || '',
+      website: s.socialLinks?.website || '',
+    },
   };
 }
 
@@ -123,6 +129,7 @@ export function mapApplicant(a: BackendApplication): Applicant {
   const studentRef = typeof a.student === 'object' ? a.student : null;
   const oppRef = typeof a.opportunity === 'object' ? a.opportunity : null;
   const statusMap: Record<string, ApplicationStatus> = {
+    new: 'submitted',
     pending: 'submitted',
     shortlisted: 'shortlisted',
     rejected: 'rejected',
@@ -184,14 +191,25 @@ export function mapMessage(m: BackendMessage, currentUserRole?: string, currentU
 }
 
 export function mapNotification(n: BackendNotification): Notification {
+  const type = n.type === 'application'
+    ? 'application'
+    : n.type === 'opportunity'
+      ? 'opportunity'
+      : n.type === 'message'
+        ? 'message'
+        : n.type === 'post-like' || n.type === 'post-comment'
+          ? 'post'
+          : 'system';
+
   return {
     id: n._id,
-    type: (n.type === 'application' ? 'application' : n.type === 'opportunity' ? 'opportunity' : n.type === 'message' ? 'message' : 'system') as Notification['type'],
+    type,
     title: n.title,
     message: n.body,
     time: n.createdAt,
     read: n.isRead,
     link: n.link,
+    postId: n.postId,
     opportunityId: n.opportunityId,
     applicationId: n.applicationId,
   };

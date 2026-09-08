@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react';
-import { MapPin, Globe, CheckCircle2, Pencil, Upload, Building2, Trophy, Briefcase } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
+import { MapPin, Globe, CheckCircle2, Pencil, Upload, Building2, Trophy, Briefcase, Trash2 } from 'lucide-react';
 import { PageContainer } from '@/components/layout/DashboardLayout';
 import { Card, CardHeader } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -8,12 +9,16 @@ import { Modal } from '@/components/ui/Modal';
 import { Field, Input, Textarea } from '@/components/ui/Input';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { SkeletonCard } from '@/components/ui/Skeleton';
+import { Avatar } from '@/components/ui/Avatar';
 import { useToast } from '@/components/ui/Toast';
 import { useAuth } from '@/context/AuthContext';
 import { companyService } from '@/services/companyService';
+import { PostFeed } from '@/components/shared/PostFeed';
 import type { Company } from '@/lib/types';
 
 export default function CompanyProfilePage() {
+  const [searchParams] = useSearchParams();
+  const focusPostId = searchParams.get('postId') || undefined;
   const { user } = useAuth();
   const { toast } = useToast();
   const [editOpen, setEditOpen] = useState(false);
@@ -21,6 +26,8 @@ export default function CompanyProfilePage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [editForm, setEditForm] = useState({ description: '', website: '', industry: '', address: '', logoUrl: '', achievements: '', projects: '' });
+  const logoRef = useRef<HTMLInputElement>(null);
+  const [logoUploading, setLogoUploading] = useState(false);
 
   useEffect(() => {
     companyService.getProfile().then((c) => {
@@ -57,13 +64,37 @@ export default function CompanyProfilePage() {
     return <PageContainer><SkeletonCard /></PageContainer>;
   }
 
+  const uploadLogo = async (file?: File) => {
+    if (!file) return;
+    setLogoUploading(true);
+    try {
+      const result = await companyService.uploadLogo(file);
+      setCompany((current) => current ? { ...current, logo: result.logoUrl } : current);
+      toast({ title: 'Company logo updated', variant: 'success' });
+    } catch {
+      toast({ title: 'Could not upload logo', variant: 'error' });
+    } finally {
+      setLogoUploading(false);
+    }
+  };
+
+  const deleteLogo = async () => {
+    try {
+      await companyService.deleteLogo();
+      setCompany((current) => current ? { ...current, logo: '' } : current);
+      toast({ title: 'Company logo removed', variant: 'success' });
+    } catch {
+      toast({ title: 'Could not remove logo', variant: 'error' });
+    }
+  };
+
   return (
     <PageContainer>
       <div className="card overflow-hidden">
         <div className="h-32 bg-gradient-to-r from-brand-700 to-brand-600" />
         <div className="px-6 pb-6">
           <div className="-mt-12 flex items-end justify-between">
-            <div className="flex h-24 w-24 items-center justify-center rounded-2xl bg-white text-3xl font-bold text-brand-600 shadow-card ring-4 ring-white">{company?.logo || user?.avatar || 'CO'}</div>
+            <div className="rounded-2xl bg-white p-1 shadow-card ring-4 ring-white"><Avatar name={company?.name ?? user?.name ?? 'Company'} src={company?.logo} size="xl" className="rounded-2xl" /></div>
             <Button variant="outline" onClick={() => setEditOpen(true)}><Pencil className="h-4 w-4" />Edit Profile</Button>
           </div>
           <div className="mt-4 flex flex-wrap items-center gap-2">
@@ -124,6 +155,19 @@ export default function CompanyProfilePage() {
         )}
       </Card>
 
+      {user && (
+        <div className="mt-6">
+          <PostFeed
+            myId={user.id}
+            myRole="company"
+            authorId={user.id}
+            authorType="company"
+            canCreate
+            focusPostId={focusPostId}
+          />
+        </div>
+      )}
+
       <div className="mt-6 grid gap-6 lg:grid-cols-2">
         <Card>
           <CardHeader title="Achievements" />
@@ -139,8 +183,15 @@ export default function CompanyProfilePage() {
         footer={<><Button variant="outline" onClick={() => setEditOpen(false)}>Cancel</Button><Button onClick={handleSave} disabled={saving}>{saving ? 'Saving…' : 'Save changes'}</Button></>}>
         <div className="space-y-4">
           <div className="flex items-center gap-4">
-            <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-brand-100 text-2xl font-bold text-brand-600">{company?.logo || user?.avatar || 'CO'}</div>
-            <div><Button variant="outline" size="sm"><Upload className="h-3.5 w-3.5" />Upload logo</Button><p className="mt-1.5 text-xs text-ink-400">Square image, max 1MB</p></div>
+            <Avatar name={company?.name ?? user?.name ?? 'Company'} src={company?.logo} size="xl" className="rounded-2xl" />
+            <div>
+              <input ref={logoRef} type="file" accept=".jpg,.jpeg,.png,.webp" className="hidden" onChange={(event) => uploadLogo(event.target.files?.[0])} />
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm" onClick={() => logoRef.current?.click()} disabled={logoUploading}><Upload className="h-3.5 w-3.5" />{logoUploading ? 'Uploading…' : 'Upload logo'}</Button>
+                <Button variant="outline" size="sm" onClick={deleteLogo}><Trash2 className="h-3.5 w-3.5" />Delete</Button>
+              </div>
+              <p className="mt-1.5 text-xs text-ink-400">Square image, JPG/PNG/WEBP</p>
+            </div>
           </div>
           <div className="grid gap-4 sm:grid-cols-2">
             <Field label="Company Name"><Input defaultValue={company?.name ?? user?.name} disabled /></Field>

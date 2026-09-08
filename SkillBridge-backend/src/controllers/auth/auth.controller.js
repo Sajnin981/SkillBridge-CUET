@@ -24,7 +24,7 @@ exports.registerStudent = async (req, res, next) => {
     }
 
     const idCardFile = req.files?.idCard?.[0];
-    if (!idCardFile) return next(new AppError("CUET student ID card upload is required.", 422));
+    if (!idCardFile) return next(new AppError("Student ID card upload is required.", 422));
 
     const resumeFile = req.files?.resume?.[0];
 

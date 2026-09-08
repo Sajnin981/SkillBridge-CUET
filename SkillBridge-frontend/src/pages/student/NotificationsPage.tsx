@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Bell, CheckCircle2, MessageSquare, Briefcase, Info } from 'lucide-react';
+import { Bell, CheckCircle2, MessageSquare, Briefcase, Info, Heart } from 'lucide-react';
 import { PageContainer } from '@/components/layout/DashboardLayout';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/Button';
@@ -10,8 +10,8 @@ import { notificationService } from '@/services/notificationService';
 import { timeAgo } from '@/lib/utils';
 import type { Notification } from '@/lib/types';
 
-const icons = { application: CheckCircle2, opportunity: Briefcase, message: MessageSquare, system: Info };
-const tones = { application: 'bg-success-50 text-success-600', opportunity: 'bg-brand-50 text-brand-600', message: 'bg-accent-50 text-accent-600', system: 'bg-ink-100 text-ink-500' };
+const icons = { application: CheckCircle2, opportunity: Briefcase, message: MessageSquare, post: Heart, system: Info };
+const tones = { application: 'bg-success-50 text-success-600', opportunity: 'bg-brand-50 text-brand-600', message: 'bg-accent-50 text-accent-600', post: 'bg-danger-50 text-danger-600', system: 'bg-ink-100 text-ink-500' };
 
 export default function NotificationsPage() {
   const { user } = useAuth();

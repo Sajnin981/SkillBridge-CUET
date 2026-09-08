@@ -33,7 +33,6 @@ interface PaginatedOpps {
 }
 
 type UserListParams = { status?: string; search?: string; page?: number; limit?: number };
-export interface AdminSettings { emailNotifications: boolean; verificationAlerts: boolean; systemAlerts: boolean }
 
 async function listUsers(role: 'student', params?: UserListParams): Promise<PaginatedStudents>;
 async function listUsers(role: 'company', params?: UserListParams): Promise<PaginatedVerifications>;
@@ -44,15 +43,6 @@ async function listUsers(role: 'student' | 'company', params?: UserListParams): 
 }
 
 export const adminService = {
-  async getSettings(): Promise<AdminSettings> {
-    const response = await api.get<ApiEnvelope<{ settings: AdminSettings }>>('/admin/settings');
-    return response.data.data.settings;
-  },
-
-  async updateSettings(settings: AdminSettings): Promise<AdminSettings> {
-    const response = await api.put<ApiEnvelope<{ settings: AdminSettings }>>('/admin/settings', settings);
-    return response.data.data.settings;
-  },
   async getStats() {
     const res = await api.get<ApiEnvelope<AdminAnalytics>>('/admin/analytics');
     const a = res.data.data;

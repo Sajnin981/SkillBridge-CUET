@@ -96,12 +96,12 @@ export interface StudentProfile {
   education: { institution: string; degree: string; field: string; start: string; end: string; grade: string }[];
   experience: { company: string; role: string; start: string; end: string; description: string }[];
   resumeUrl?: string;
-  social: { github?: string; linkedin?: string; portfolio?: string };
+  social: { github?: string; linkedin?: string; facebook?: string; portfolio?: string; website?: string };
 }
 
 export interface Notification {
   id: string;
-  type: 'application' | 'opportunity' | 'system' | 'message';
+  type: 'application' | 'opportunity' | 'system' | 'message' | 'post';
   title: string;
   message: string;
   time: string;
@@ -109,6 +109,7 @@ export interface Notification {
   link?: string;
   opportunityId?: string;
   applicationId?: string;
+  postId?: string;
 }
 
 export interface Toast {

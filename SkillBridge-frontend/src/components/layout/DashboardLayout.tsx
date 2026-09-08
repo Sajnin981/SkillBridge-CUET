@@ -20,7 +20,7 @@ const studentNav: NavItem[] = [
   { to: '/student/messages', label: 'Messages', icon: MessageSquare },
   { to: '/student/notifications', label: 'Notifications', icon: Bell },
   { to: '/student/profile', label: 'Profile', icon: User },
-  { to: '/student/resume', label: 'Resume', icon: FileUp },
+  { to: '/student/resume', label: 'AI Resume', icon: FileUp },
   { to: '/student/settings', label: 'Settings', icon: Settings },
 ];
 
@@ -40,6 +40,7 @@ const adminNav: NavItem[] = [
   { to: '/admin/verifications', label: 'Verifications', icon: ShieldCheck },
   { to: '/admin/companies', label: 'Companies', icon: Building2 },
   { to: '/admin/students', label: 'Students', icon: Users },
+  { to: '/admin/search', label: 'Search', icon: Search },
   { to: '/admin/settings', label: 'Settings', icon: Settings },
 ];
 
@@ -91,7 +92,7 @@ export function DashboardLayout() {
           </button>
           <h1 className="text-lg font-semibold text-ink-800">{pageTitle}</h1>
           <div className="ml-auto flex items-center gap-1.5 sm:gap-2">
-            <button className="hidden h-10 w-10 items-center justify-center rounded-xl text-ink-500 transition hover:bg-ink-100 sm:flex">
+            <button onClick={() => navigate(role === 'admin' ? '/admin/students' : `/${role}/search`)} className="hidden h-10 w-10 items-center justify-center rounded-xl text-ink-500 transition hover:bg-ink-100 sm:flex">
               <Search className="h-5 w-5" />
             </button>
             <NotificationDropdown role={role} />

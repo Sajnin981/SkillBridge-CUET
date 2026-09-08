@@ -50,7 +50,7 @@ export default function RegisterPage() {
 
     // Final step: submit registration
     if (role === 'student' && !idCardFile) {
-      toast({ title: 'Student ID Card Required', description: 'Please upload a photo or scan of your CUET ID card.', variant: 'error' });
+      toast({ title: 'Student ID Card Required', description: 'Please upload a photo or scan of your student ID card.', variant: 'error' });
       return;
     }
     if (role === 'company' && !tradeLicenseFile) {
@@ -139,9 +139,8 @@ export default function RegisterPage() {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder={role === 'student' ? 'you@cuet.ac.bd' : 'hr@company.com'}
-                pattern={role === 'student' ? '^[^\\s@]+@(?:[^\\s@]+\\.)*cuet\\.ac\\.bd$' : undefined}
-                title={role === 'student' ? 'Use a valid CUET email address.' : 'Use a valid email address.'}
+                placeholder={role === 'student' ? 'you@example.com' : 'hr@company.com'}
+                title="Use a valid email address."
                 className="pl-10"
               />
             </Field>
@@ -229,8 +228,8 @@ export default function RegisterPage() {
         {step === 2 && role === 'student' && (
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-ink-700">CUET Student ID Card (Required)</label>
-              <p className="text-xs text-ink-500 mb-2">Upload a scan/photo of your CUET ID (JPG, PNG, or PDF, max 5MB)</p>
+              <label className="block text-sm font-medium text-ink-700">Student ID Card (Required)</label>
+              <p className="text-xs text-ink-500 mb-2">Upload a scan/photo of your student ID (JPG, PNG, or PDF, max 5MB)</p>
               <input
                 type="file"
                 accept=".jpg,.jpeg,.png,.pdf"

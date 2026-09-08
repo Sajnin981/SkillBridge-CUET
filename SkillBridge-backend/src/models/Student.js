@@ -55,7 +55,7 @@ const studentSchema = new Schema(
       unique: true,
       lowercase: true,
       trim: true,
-      match: [/^[a-zA-Z0-9._%+-]+@(?:[a-zA-Z0-9-]+\.)*cuet\.ac\.bd$/, "Email must be a valid CUET email (@cuet.ac.bd)"],
+      match: [/^[^\s@]+@[^\s@]+\.[^\s@]+$/, "Please provide a valid email"],
     },
     studentId: { type: String, required: true, unique: true, trim: true },
     department: { type: String, required: true, trim: true },
@@ -74,6 +74,13 @@ const studentSchema = new Schema(
     avatarUrl: { type: String, default: "" },
     bio: { type: String, default: "", maxlength: 1000 },
     skills: [{ type: String, trim: true }],
+    socialLinks: {
+      linkedin: { type: String, trim: true, default: "" },
+      github: { type: String, trim: true, default: "" },
+      facebook: { type: String, trim: true, default: "" },
+      portfolio: { type: String, trim: true, default: "" },
+      website: { type: String, trim: true, default: "" },
+    },
     // Rich profile sections
     education: [educationSchema],
     experience: [experienceSchema],
@@ -88,15 +95,6 @@ const studentSchema = new Schema(
       default: "pending",
     },
     rejectionReason: { type: String, default: "" },
-    settings: {
-      notifications: {
-        email: { type: Boolean, default: true },
-        push: { type: Boolean, default: true },
-        applications: { type: Boolean, default: true },
-        recommendations: { type: Boolean, default: true },
-        messages: { type: Boolean, default: false },
-      },
-    },
   },
   { timestamps: true }
 );

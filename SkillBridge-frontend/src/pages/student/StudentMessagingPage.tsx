@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { MessagingView } from '@/components/shared/MessagingView';
 import { SkeletonCard } from '@/components/ui/Skeleton';
 import { useAuth } from '@/context/AuthContext';
@@ -24,6 +25,8 @@ interface Message {
 
 export default function StudentMessagingPage() {
   const { user } = useAuth();
+  const [searchParams] = useSearchParams();
+  const conversationId = searchParams.get('conversationId');
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [messagesByConv, setMessagesByConv] = useState<Record<string, Message[]>>({});
   const [loading, setLoading] = useState(true);
@@ -56,6 +59,7 @@ export default function StudentMessagingPage() {
       conversations={conversations}
       messagesByConv={messagesByConv}
       onSendMessage={handleSendMessage}
+      initialConversationId={conversationId}
     />
   );
 }

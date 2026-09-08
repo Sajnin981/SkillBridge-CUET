@@ -3,7 +3,7 @@ const mongoose = require("mongoose");
 const { Schema } = mongoose;
 
 const APPLICATION_STATUS = [
-  "pending",
+  "new",
   "shortlisted",
   "rejected",
   "withdrawn",
@@ -24,7 +24,7 @@ const applicationSchema = new Schema(
     status: {
       type: String,
       enum: APPLICATION_STATUS,
-      default: "pending",
+      default: "new",
       index: true,
     },
     // Optional company-side note when changing status.
