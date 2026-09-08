@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { MapPin, Globe, CheckCircle2, Pencil, Upload, Building2 } from 'lucide-react';
+import { MapPin, Globe, CheckCircle2, Pencil, Upload, Building2, Trophy, Briefcase } from 'lucide-react';
 import { PageContainer } from '@/components/layout/DashboardLayout';
 import { Card, CardHeader } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -20,12 +20,14 @@ export default function CompanyProfilePage() {
   const [company, setCompany] = useState<Company | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [editForm, setEditForm] = useState({ description: '', website: '', industry: '', address: '', logoUrl: '' });
+  const [editForm, setEditForm] = useState({ description: '', website: '', industry: '', address: '', logoUrl: '', achievements: '', projects: '' });
 
   useEffect(() => {
     companyService.getProfile().then((c) => {
       setCompany(c);
-      setEditForm({ description: c.about, website: c.website, industry: c.industry, address: c.location, logoUrl: '' });
+      if (c) {
+        setEditForm({ description: c.about, website: c.website, industry: c.industry, address: c.location, logoUrl: '', achievements: c.achievements.join('\n'), projects: c.projects.map((p) => [p.title, p.description, p.link].join(' | ')).join('\n') });
+      }
       setLoading(false);
     }).catch(() => setLoading(false));
   }, []);
@@ -38,6 +40,8 @@ export default function CompanyProfilePage() {
       industry: editForm.industry,
       address: editForm.address,
       logoUrl: editForm.logoUrl || undefined,
+      achievements: editForm.achievements.split('\n').map((item) => item.trim()).filter(Boolean),
+      projects: editForm.projects.split('\n').map((line) => line.split('|').map((item) => item.trim())).filter(([title]) => title).map(([title, description = '', link = '']) => ({ title, description, link })),
     }).then((c) => {
       setCompany(c);
       setSaving(false);
@@ -120,6 +124,17 @@ export default function CompanyProfilePage() {
         )}
       </Card>
 
+      <div className="mt-6 grid gap-6 lg:grid-cols-2">
+        <Card>
+          <CardHeader title="Achievements" />
+          {company?.achievements.length ? <ul className="space-y-2">{company.achievements.map((item) => <li key={item} className="flex gap-2 text-sm text-ink-600"><Trophy className="mt-0.5 h-4 w-4 shrink-0 text-accent-500" />{item}</li>)}</ul> : <p className="text-sm text-ink-500">No achievements added yet.</p>}
+        </Card>
+        <Card>
+          <CardHeader title="Projects and Current Work" />
+          {company?.projects.length ? <div className="space-y-3">{company.projects.map((project) => <div key={project.title}><p className="flex items-center gap-2 text-sm font-semibold text-ink-800"><Briefcase className="h-4 w-4 text-brand-600" />{project.title}</p>{project.description && <p className="mt-1 text-sm text-ink-600">{project.description}</p>}{project.link && <a href={project.link} className="text-xs text-brand-600 hover:underline">{project.link}</a>}</div>)}</div> : <p className="text-sm text-ink-500">No projects added yet.</p>}
+        </Card>
+      </div>
+
       <Modal open={editOpen} onClose={() => setEditOpen(false)} title="Edit Company Profile" size="lg"
         footer={<><Button variant="outline" onClick={() => setEditOpen(false)}>Cancel</Button><Button onClick={handleSave} disabled={saving}>{saving ? 'Saving…' : 'Save changes'}</Button></>}>
         <div className="space-y-4">
@@ -134,6 +149,8 @@ export default function CompanyProfilePage() {
             <Field label="Location"><Input value={editForm.address} onChange={(e) => setEditForm({ ...editForm, address: e.target.value })} placeholder="Dhaka, BD" /></Field>
           </div>
           <Field label="About"><Textarea value={editForm.description} onChange={(e) => setEditForm({ ...editForm, description: e.target.value })} placeholder="Describe your company…" /></Field>
+          <Field label="Achievements" hint="One achievement per line"><Textarea value={editForm.achievements} onChange={(e) => setEditForm({ ...editForm, achievements: e.target.value })} placeholder="Recognized as ..." /></Field>
+          <Field label="Projects and current work" hint="One per line: title | description | link"><Textarea value={editForm.projects} onChange={(e) => setEditForm({ ...editForm, projects: e.target.value })} placeholder="Product platform | Building ... | https://example.com" /></Field>
         </div>
       </Modal>
     </PageContainer>

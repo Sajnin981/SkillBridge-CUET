@@ -7,10 +7,7 @@ import { cn } from '@/lib/utils';
 
 const statusTone: Record<string, 'neutral' | 'brand' | 'accent' | 'success' | 'warning' | 'danger' | 'purple'> = {
   submitted: 'neutral',
-  reviewing: 'brand',
   shortlisted: 'accent',
-  interview: 'purple',
-  offered: 'success',
   rejected: 'danger',
 };
 

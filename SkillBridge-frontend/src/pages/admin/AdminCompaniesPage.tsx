@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Building2 } from 'lucide-react';
+import { Building2, Trash2 } from 'lucide-react';
 import { PageContainer } from '@/components/layout/DashboardLayout';
 import { SearchBar } from '@/components/shared/SearchBar';
 import { Badge } from '@/components/ui/Badge';
@@ -7,6 +7,8 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { SkeletonCard } from '@/components/ui/Skeleton';
 import { companyService } from '@/services/companyService';
 import type { Company } from '@/lib/types';
+import { adminService } from '@/services/adminService';
+import { Button } from '@/components/ui/Button';
 
 const statusTone: Record<string, 'success' | 'warning' | 'danger'> = { verified: 'success', pending: 'warning', rejected: 'danger' };
 
@@ -15,16 +17,28 @@ export default function AdminCompaniesPage() {
   const [filter, setFilter] = useState('All');
   const [companies, setCompanies] = useState<Company[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
   useEffect(() => {
-    companyService.getAll().then((c) => { setCompanies(c); setLoading(false); });
-  }, []);
+    setLoading(true);
+    setError('');
+    companyService.getAll({ search: search || undefined, status: filter === 'All' ? undefined : filter.toLowerCase() })
+      .then((c) => setCompanies(c))
+      .catch(() => setError('Could not load companies.'))
+      .finally(() => setLoading(false));
+  }, [search, filter]);
 
-  const filtered = companies.filter((c) => {
-    if (search && !c.name.toLowerCase().includes(search.toLowerCase())) return false;
-    if (filter !== 'All' && c.status !== filter.toLowerCase()) return false;
-    return true;
-  });
+  const filtered = companies;
+
+  const deleteCompany = async (company: Company) => {
+    if (!window.confirm(`Delete ${company.name}? This cannot be undone.`)) return;
+    try {
+      await adminService.deleteUser('company', company.id);
+      setCompanies((items) => items.filter((item) => item.id !== company.id));
+    } catch {
+      setError('Could not delete company.');
+    }
+  };
 
   return (
     <PageContainer>
@@ -44,6 +58,8 @@ export default function AdminCompaniesPage() {
 
       {loading ? (
         <div className="space-y-3">{[...Array(3)].map((_, i) => <SkeletonCard key={i} />)}</div>
+      ) : error ? (
+        <div className="card p-6 text-center text-sm text-danger-600">{error}</div>
       ) : filtered.length === 0 ? (
         <div className="card"><EmptyState icon={<Building2 className="h-7 w-7" />} title="No companies found" description="Companies will appear here once they register on the platform." /></div>
       ) : (
@@ -55,6 +71,7 @@ export default function AdminCompaniesPage() {
                 <th className="hidden px-4 py-3 sm:table-cell">Industry</th>
                 <th className="px-4 py-3">Status</th>
                 <th className="hidden px-4 py-3 sm:table-cell">Open Roles</th>
+                <th className="px-4 py-3" />
               </tr>
             </thead>
             <tbody className="divide-y divide-ink-50">
@@ -69,6 +86,7 @@ export default function AdminCompaniesPage() {
                   <td className="hidden px-4 py-3 sm:table-cell"><span className="text-sm text-ink-600">{c.industry}</span></td>
                   <td className="px-4 py-3"><Badge tone={statusTone[c.status]}>{c.status}</Badge></td>
                   <td className="hidden px-4 py-3 sm:table-cell"><span className="text-sm font-semibold text-ink-700">{c.openRoles}</span></td>
+                  <td className="px-4 py-3"><Button variant="ghost" size="icon" onClick={() => deleteCompany(c)} aria-label={`Delete ${c.name}`}><Trash2 className="h-4 w-4 text-danger-500" /></Button></td>
                 </tr>
               ))}
             </tbody>

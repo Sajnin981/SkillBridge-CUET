@@ -29,7 +29,6 @@ import AIRecommendationsPage from '@/pages/student/AIRecommendationsPage';
 import NotificationsPage from '@/pages/student/NotificationsPage';
 import SettingsPage from '@/pages/student/SettingsPage';
 import StudentMessagingPage from '@/pages/student/StudentMessagingPage';
-import StudentPortfolioPage from '@/pages/student/StudentPortfolioPage';
 import StudentResumePage from '@/pages/student/StudentResumePage';
 
 import CompanyDashboard from '@/pages/company/CompanyDashboard';
@@ -44,6 +43,8 @@ import CompanyAnalyticsPage from '@/pages/company/CompanyAnalyticsPage';
 import AdminDashboard from '@/pages/admin/AdminDashboard';
 import AdminCompaniesPage from '@/pages/admin/AdminCompaniesPage';
 import AdminVerificationsPage from '@/pages/admin/AdminVerificationsPage';
+import AdminStudentsPage from '@/pages/admin/AdminStudentsPage';
+import AdminSettingsPage from '@/pages/admin/AdminSettingsPage';
 
 export default function App() {
   return (
@@ -77,7 +78,6 @@ export default function App() {
               <Route path="messages" element={<StudentMessagingPage />} />
               <Route path="notifications" element={<NotificationsPage />} />
               <Route path="profile" element={<StudentProfilePage />} />
-              <Route path="portfolio" element={<StudentPortfolioPage />} />
               <Route path="resume" element={<StudentResumePage />} />
               <Route path="settings" element={<SettingsPage />} />
             </Route>
@@ -99,6 +99,8 @@ export default function App() {
               <Route index element={<AdminDashboard />} />
               <Route path="verifications" element={<AdminVerificationsPage />} />
               <Route path="companies" element={<AdminCompaniesPage />} />
+              <Route path="students" element={<AdminStudentsPage />} />
+              <Route path="settings" element={<AdminSettingsPage />} />
             </Route>
 
             {/* 404 */}

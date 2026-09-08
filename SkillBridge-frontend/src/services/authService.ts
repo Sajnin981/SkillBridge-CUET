@@ -20,6 +20,11 @@ interface LoginResponse {
   role: BackendRole;
 }
 
+function normalizePhone(value: string): string {
+  const digitsOnly = value.replace(/\D/g, '');
+  return value.includes('+') ? `+${digitsOnly}` : digitsOnly;
+}
+
 function mapBackendUser(user: BackendStudent | BackendCompany | BackendAdmin, role: BackendRole): AuthUser {
   if (role === 'student') return mapStudent(user as BackendStudent);
   if (role === 'company') return mapCompanyUser(user as BackendCompany);
@@ -27,6 +32,10 @@ function mapBackendUser(user: BackendStudent | BackendCompany | BackendAdmin, ro
 }
 
 export const authService = {
+  async changePassword(currentPassword: string, newPassword: string): Promise<void> {
+    await api.put<ApiEnvelope>('/auth/password', { currentPassword, newPassword });
+  },
+
   async login(email: string, password: string, role: Role): Promise<AuthUser> {
     const res = await api.post<ApiEnvelope<LoginResponse>>('/auth/login', { email, password, role });
     const { user, token, role: backendRole } = res.data.data;
@@ -49,19 +58,17 @@ export const authService = {
   }): Promise<AuthUser> {
     const formData = new FormData();
     Object.entries(data).forEach(([key, value]) => {
+      if (key === 'phone') {
+        formData.append(key, normalizePhone(String(value)));
+        return;
+      }
       if (value instanceof File) formData.append(key, value);
       else if (value !== undefined && value !== null) formData.append(key, String(value));
     });
-    const res = await api.post<ApiEnvelope<LoginResponse & { student?: BackendStudent; company?: BackendCompany }>>('/auth/student/register', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    });
-    const { token } = res.data.data;
+    const res = await api.post<ApiEnvelope<LoginResponse & { student?: BackendStudent; company?: BackendCompany }>>('/auth/student/register', formData);
     const user = res.data.data.user || res.data.data.student!;
     const backendRole = res.data.data.role || 'student';
-    setAuthToken(token);
-    const mapped = mapBackendUser(user, backendRole);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(mapped));
-    return mapped;
+    return mapBackendUser(user, backendRole);
   },
 
   async registerCompany(data: {
@@ -78,44 +85,17 @@ export const authService = {
   }): Promise<AuthUser> {
     const formData = new FormData();
     Object.entries(data).forEach(([key, value]) => {
+      if (key === 'phone') {
+        formData.append(key, normalizePhone(String(value)));
+        return;
+      }
       if (value instanceof File) formData.append(key, value);
       else if (value !== undefined && value !== null) formData.append(key, String(value));
     });
-    const res = await api.post<ApiEnvelope<LoginResponse & { student?: BackendStudent; company?: BackendCompany }>>('/auth/company/register', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    });
-    const { token } = res.data.data;
+    const res = await api.post<ApiEnvelope<LoginResponse & { student?: BackendStudent; company?: BackendCompany }>>('/auth/company/register', formData);
     const user = res.data.data.user || res.data.data.company!;
     const backendRole = res.data.data.role || 'company';
-    setAuthToken(token);
-    const mapped = mapBackendUser(user, backendRole);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(mapped));
-    return mapped;
-  },
-
-  async register(email: string, name: string, role: Role): Promise<AuthUser> {
-    if (role === 'student') {
-      return this.registerStudent({
-        fullName: name,
-        email,
-        studentId: 'TEMP-' + Date.now(),
-        department: 'Computer Science & Engineering',
-        batch: '2022',
-        phone: '',
-        password: 'temp-password',
-        idCard: new File([''], 'placeholder.txt', { type: 'text/plain' }),
-      });
-    }
-    return this.registerCompany({
-      companyName: name,
-      hrName: name,
-      email,
-      phone: '',
-      industry: 'Software',
-      address: '',
-      password: 'temp-password',
-      tradeLicense: new File([''], 'placeholder.txt', { type: 'text/plain' }),
-    });
+    return mapBackendUser(user, backendRole);
   },
 
   async getMe(): Promise<AuthUser | null> {

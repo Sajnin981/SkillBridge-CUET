@@ -1,5 +1,17 @@
 import axios, { type AxiosInstance, AxiosError } from 'axios';
 
+export type {
+  BackendStudent,
+  BackendCompany,
+  BackendCompanySettings,
+  BackendOpportunity,
+  BackendApplication,
+  BackendConversation,
+  BackendMessage,
+  BackendNotification,
+  Pagination,
+} from './types';
+
 const TOKEN_KEY = 'skillbridge_token';
 const AUTH_KEY = 'skillbridge_auth';
 

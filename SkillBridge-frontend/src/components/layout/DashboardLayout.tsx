@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from 'react';
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
-import { GraduationCap, Menu, X, Search, LayoutDashboard, User, Briefcase, Bookmark, FileText, Sparkles, Bell, Settings, Building2, Users, ShieldCheck, BarChart3, MessageSquare, Award, FolderGit2, FileUp, LogOut } from 'lucide-react';
+import { GraduationCap, Menu, X, Search, LayoutDashboard, User, Briefcase, Bookmark, FileText, Sparkles, Bell, Settings, Building2, Users, ShieldCheck, BarChart3, MessageSquare, Award, FileUp, LogOut } from 'lucide-react';
 import { NotificationDropdown, UserAvatarMenu } from './NotificationDropdown';
 import { useAuth } from '@/context/AuthContext';
 import { cn } from '@/lib/utils';
@@ -20,7 +20,6 @@ const studentNav: NavItem[] = [
   { to: '/student/messages', label: 'Messages', icon: MessageSquare },
   { to: '/student/notifications', label: 'Notifications', icon: Bell },
   { to: '/student/profile', label: 'Profile', icon: User },
-  { to: '/student/portfolio', label: 'Portfolio', icon: FolderGit2 },
   { to: '/student/resume', label: 'Resume', icon: FileUp },
   { to: '/student/settings', label: 'Settings', icon: Settings },
 ];
@@ -40,6 +39,8 @@ const adminNav: NavItem[] = [
   { to: '/admin', label: 'Dashboard', icon: LayoutDashboard },
   { to: '/admin/verifications', label: 'Verifications', icon: ShieldCheck },
   { to: '/admin/companies', label: 'Companies', icon: Building2 },
+  { to: '/admin/students', label: 'Students', icon: Users },
+  { to: '/admin/settings', label: 'Settings', icon: Settings },
 ];
 
 const navByRole: Record<string, NavItem[]> = {

@@ -36,18 +36,15 @@ export function mapStudentProfile(s: BackendStudent): StudentProfile {
     phone: s.phone,
     title: `${s.department} · Batch ${s.batch}`,
     department: s.department,
-    cgpa: 0,
     batch: s.batch,
-    location: '',
     bio: s.bio || '',
     skills: (s.skills || []).map((name) => ({ name } as Skill)),
     projects: (s.portfolio || []).map((p) => ({ title: p, description: '', link: '' })),
     achievements: (s.achievements || []).map((a) => a.title),
     certifications: (s.certifications || []).map((c) => ({ name: c.name, issuer: c.issuer || '', year: c.date || '' })),
-    education: (s.education || []).map((e) => ({ institution: e.institution, degree: e.degree, field: e.field || '', start: e.startYear || '', end: e.endYear || '', cgpa: 0 })),
+    education: (s.education || []).map((e) => ({ institution: e.institution, degree: e.degree, field: e.field || '', start: e.startYear || '', end: e.endYear || '', grade: e.grade || '' })),
     experience: (s.experience || []).map((e) => ({ company: e.company, role: e.position, start: e.startDate || '', end: e.endDate || '', description: e.description || '' })),
-    resumeUrl: s.resumeUrl,
-    resumeScore: 0,
+    resumeUrl: s.sharedResumeUrl || s.resumeUrl,
     social: {},
   };
 }
@@ -61,8 +58,10 @@ export function mapCompany(c: BackendCompany): Company {
     location: c.address,
     website: c.website || '',
     about: c.description || '',
-    size: '',
-    founded: '',
+    achievements: c.achievements || [],
+    projects: (c.projects || []).map((p) => ({ title: p.title, description: p.description || '', link: p.link || '' })),
+    size: c.size || '',
+    founded: c.founded || '',
     status: c.status === 'approved' ? 'verified' : c.status === 'rejected' ? 'rejected' : 'pending',
     verifiedAt: c.createdAt,
     openRoles: 0,
@@ -122,29 +121,27 @@ export function mapOpportunity(o: BackendOpportunity): Opportunity {
 
 export function mapApplicant(a: BackendApplication): Applicant {
   const studentRef = typeof a.student === 'object' ? a.student : null;
+  const oppRef = typeof a.opportunity === 'object' ? a.opportunity : null;
   const statusMap: Record<string, ApplicationStatus> = {
     pending: 'submitted',
-    reviewing: 'reviewing',
     shortlisted: 'shortlisted',
-    interview: 'interview',
-    offered: 'offered',
     rejected: 'rejected',
     withdrawn: 'rejected',
   };
   return {
     id: a._id,
+    studentId: studentRef?._id || (typeof a.student === 'string' ? a.student : ''),
+    opportunityId: oppRef?._id || (typeof a.opportunity === 'string' ? a.opportunity : ''),
     name: studentRef?.fullName || 'Applicant',
     avatar: studentRef?.avatarUrl || (studentRef?.fullName || 'AP').slice(0, 2).toUpperCase(),
     email: studentRef?.email || '',
     department: studentRef?.department || '',
-    cgpa: 0,
     batch: studentRef?.batch || '',
     skills: studentRef?.skills || [],
     matchScore: 0,
     status: statusMap[a.status] || 'submitted',
     appliedAt: a.createdAt,
-    resumeScore: 0,
-    experience: '',
+    resumeUrl: a.resumeUrl || studentRef?.resumeUrl || '',
     shortlisted: a.status === 'shortlisted',
     rejected: a.status === 'rejected',
   };
@@ -194,6 +191,9 @@ export function mapNotification(n: BackendNotification): Notification {
     message: n.body,
     time: n.createdAt,
     read: n.isRead,
+    link: n.link,
+    opportunityId: n.opportunityId,
+    applicationId: n.applicationId,
   };
 }
 

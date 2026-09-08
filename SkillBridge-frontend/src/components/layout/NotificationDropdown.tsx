@@ -69,7 +69,7 @@ export function NotificationDropdown({ role }: NotificationDropdownProps) {
               items.map((n) => {
                 const Icon = icons[n.type];
                 return (
-                  <div key={n.id} className={`flex gap-3 border-b border-ink-50 p-4 transition hover:bg-ink-50 ${!n.read ? 'bg-brand-50/40' : ''}`}>
+                  <Link to={n.link || `/${role}/notifications`} key={n.id} onClick={() => { if (!n.read) notificationService.markRead(n.id); setOpen(false); }} className={`flex gap-3 border-b border-ink-50 p-4 transition hover:bg-ink-50 ${!n.read ? 'bg-brand-50/40' : ''}`}>
                     <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${tones[n.type]}`}>
                       <Icon className="h-4 w-4" />
                     </div>
@@ -79,7 +79,7 @@ export function NotificationDropdown({ role }: NotificationDropdownProps) {
                       <p className="mt-1 text-[11px] text-ink-400">{timeAgo(n.time)}</p>
                     </div>
                     {!n.read && <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-brand-500" />}
-                  </div>
+                  </Link>
                 );
               })
             )}

@@ -10,10 +10,7 @@ export type BackendOpportunityType =
 
 export type BackendApplicationStatus =
   | 'pending'
-  | 'reviewing'
   | 'shortlisted'
-  | 'interview'
-  | 'offered'
   | 'rejected'
   | 'withdrawn';
 
@@ -29,6 +26,8 @@ export interface BackendStudent {
   phone: string;
   idCardUrl: string;
   resumeUrl?: string;
+  aiResumeUrl?: string;
+  sharedResumeUrl?: string;
   avatarUrl?: string;
   bio?: string;
   skills?: string[];
@@ -44,6 +43,10 @@ export interface BackendStudent {
   updatedAt: string;
 }
 
+export interface BackendCompanySettings {
+  notifications: { newApplicants: boolean; dailyDigest: boolean; messages: boolean; weeklyReport: boolean };
+}
+
 export interface BackendCompany {
   _id: string;
   companyName: string;
@@ -53,11 +56,16 @@ export interface BackendCompany {
   website?: string;
   industry: string;
   address: string;
+  size?: string;
+  founded?: string;
   logoUrl?: string;
   tradeLicenseUrl: string;
   description?: string;
+  achievements?: string[];
+  projects?: { title: string; description?: string; link?: string }[];
   status: BackendAccountStatus;
   rejectionReason?: string;
+  settings?: BackendCompanySettings;
   createdAt: string;
   updatedAt: string;
 }
@@ -110,7 +118,6 @@ export interface BackendApplication {
   resumeUrl: string;
   status: BackendApplicationStatus;
   note?: string;
-  interview?: { scheduledAt: string | null; location: string; notes: string };
   createdAt: string;
   updatedAt: string;
 }
@@ -145,6 +152,8 @@ export interface BackendNotification {
   body: string;
   type?: string;
   link?: string;
+  opportunityId?: string;
+  applicationId?: string;
   isRead: boolean;
   readAt: string | null;
   createdAt: string;

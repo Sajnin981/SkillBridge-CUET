@@ -9,13 +9,7 @@ export type OpportunityType =
   | 'Scholarship'
   | 'Part-time';
 
-export type ApplicationStatus =
-  | 'submitted'
-  | 'reviewing'
-  | 'shortlisted'
-  | 'interview'
-  | 'offered'
-  | 'rejected';
+export type ApplicationStatus = 'submitted' | 'shortlisted' | 'rejected';
 
 export type CompanyStatus = 'pending' | 'verified' | 'rejected';
 
@@ -58,6 +52,8 @@ export interface Company {
   location: string;
   website: string;
   about: string;
+  achievements: string[];
+  projects: { title: string; description: string; link: string }[];
   size: string;
   founded: string;
   status: CompanyStatus;
@@ -68,18 +64,18 @@ export interface Company {
 
 export interface Applicant {
   id: string;
+  studentId: string;
+  opportunityId: string;
   name: string;
   avatar: string;
   email: string;
   department: string;
-  cgpa: number;
   batch: string;
   skills: string[];
   matchScore: number;
   status: ApplicationStatus;
   appliedAt: string;
-  resumeScore: number;
-  experience: string;
+  resumeUrl: string;
   shortlisted?: boolean;
   rejected?: boolean;
 }
@@ -91,18 +87,15 @@ export interface StudentProfile {
   phone: string;
   title: string;
   department: string;
-  cgpa: number;
   batch: string;
-  location: string;
   bio: string;
   skills: Skill[];
   projects: { title: string; description: string; link: string }[];
   achievements: string[];
   certifications: { name: string; issuer: string; year: string }[];
-  education: { institution: string; degree: string; field: string; start: string; end: string; cgpa: number }[];
+  education: { institution: string; degree: string; field: string; start: string; end: string; grade: string }[];
   experience: { company: string; role: string; start: string; end: string; description: string }[];
   resumeUrl?: string;
-  resumeScore: number;
   social: { github?: string; linkedin?: string; portfolio?: string };
 }
 
@@ -113,6 +106,9 @@ export interface Notification {
   message: string;
   time: string;
   read: boolean;
+  link?: string;
+  opportunityId?: string;
+  applicationId?: string;
 }
 
 export interface Toast {

@@ -10,8 +10,11 @@ import { Footer } from '@/components/layout/Footer';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { Avatar } from '@/components/ui/Avatar';
-import { trustedCompanies, testimonials, faqs, platformStats, categories } from '@/lib/constants';
-import { useState } from 'react';
+import { trustedCompanies, testimonials, categories } from '@/lib/constants';
+import { useEffect, useState } from 'react';
+import { opportunityService } from '@/services/opportunityService';
+import type { Opportunity } from '@/lib/types';
+import { faqService, type FAQItem } from '@/services/faqService';
 
 const fadeUp = {
   hidden: { opacity: 0, y: 24 },
@@ -24,16 +27,26 @@ const stagger = {
 };
 
 export default function LandingPage() {
+  const [opportunities, setOpportunities] = useState<Opportunity[]>([]);
+  const [opportunitiesLoading, setOpportunitiesLoading] = useState(true);
+  const [opportunitiesError, setOpportunitiesError] = useState(false);
+
+  useEffect(() => {
+    opportunityService.getAll({ limit: 3 })
+      .then(setOpportunities)
+      .catch(() => setOpportunitiesError(true))
+      .finally(() => setOpportunitiesLoading(false));
+  }, []);
+
   return (
     <div className="min-h-screen bg-ink-50">
       <Navbar />
-      <Hero />
+      <Hero opportunities={opportunities} loading={opportunitiesLoading} error={opportunitiesError} />
       <TrustedBy />
       <Features />
       <AIFeatures />
       <HowItWorks />
       <Benefits />
-      <Stats />
       <Categories />
       <Testimonials />
       <FAQ />
@@ -43,7 +56,7 @@ export default function LandingPage() {
   );
 }
 
-function Hero() {
+function Hero({ opportunities, loading, error }: { opportunities: Opportunity[]; loading: boolean; error: boolean }) {
   return (
     <section className="relative overflow-hidden">
       <div className="absolute inset-0 -z-10">
@@ -84,11 +97,11 @@ function Hero() {
                 <div className="h-3 w-3 rounded-full bg-success-400" />
               </div>
               <div className="grid gap-4 md:grid-cols-3">
-                {[
-                  { title: 'Frontend Engineer Intern', company: 'Brain Station 23', type: 'Internship', remote: true, location: 'Dhaka, BD', salary: 'BDT 15,000/mo' },
-                  { title: 'ML Research Assistant', company: 'Telenor Health', type: 'Research', remote: true, location: 'Remote', salary: 'BDT 20,000/mo' },
-                  { title: 'Backend Engineer', company: 'Pathao', type: 'Job', remote: false, location: 'Dhaka, BD', salary: 'BDT 45,000/mo' },
-                ].map((o) => (
+                {loading && <p className="col-span-full py-8 text-center text-sm text-ink-400">Loading current opportunities…</p>}
+                {!loading && error && <p className="col-span-full py-8 text-center text-sm text-danger-600">Current opportunities are unavailable.</p>}
+                {!loading && !error && opportunities.length === 0 && <p className="col-span-full py-8 text-center text-sm text-ink-400">No opportunities are available right now.</p>}
+                {!loading && !error && opportunities.map((o) => (
+                  <Link to="/opportunities" key={o.id}>
                   <div key={o.title} className="rounded-xl bg-white p-4 shadow-soft ring-1 ring-ink-200/60">
                     <div className="flex items-center gap-2.5">
                       <Avatar name={o.company} size="sm" />
@@ -106,6 +119,7 @@ function Hero() {
                       <span className="font-medium text-brand-600">{o.salary}</span>
                     </div>
                   </div>
+                  </Link>
                 ))}
               </div>
             </div>
@@ -283,23 +297,6 @@ function Benefits() {
   );
 }
 
-function Stats() {
-  return (
-    <section className="py-20">
-      <div className="container-app">
-        <div className="grid grid-cols-2 gap-6 lg:grid-cols-4">
-          {platformStats.map((s) => (
-            <div key={s.label} className="card p-6 text-center">
-              <p className="font-display text-3xl font-extrabold text-brand-600 lg:text-4xl">{s.value.toLocaleString()}{s.suffix}</p>
-              <p className="mt-1.5 text-sm text-ink-500">{s.label}</p>
-            </div>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
-
 const categoryIcons: Record<string, typeof Briefcase> = {
   Internship: Briefcase, Job: Building2, Freelancing: Laptop, Research: FlaskConical, Competition: Trophy, Scholarship: GraduationCap, 'Part-time': Clock,
 };
@@ -361,18 +358,29 @@ function Testimonials() {
 
 function FAQ() {
   const [open, setOpen] = useState<number | null>(0);
+  const [faqs, setFaqs] = useState<FAQItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
+
+  useEffect(() => {
+    faqService.getPublished().then(setFaqs).catch(() => setError(true)).finally(() => setLoading(false));
+  }, []);
+
   return (
     <section className="bg-white py-20">
       <div className="container-app">
         <SectionHeader eyebrow="FAQ" title="Frequently asked questions" description="Everything you need to know about SkillBridge CUET." />
         <div className="mx-auto mt-12 max-w-3xl space-y-3">
-          {faqs.map((f, i) => (
-            <div key={f.q} className="card overflow-hidden">
+          {loading && <p className="text-center text-sm text-ink-400">Loading FAQs…</p>}
+          {!loading && error && <p className="text-center text-sm text-danger-600">FAQs are currently unavailable.</p>}
+          {!loading && !error && faqs.length === 0 && <p className="text-center text-sm text-ink-400">No FAQs published yet.</p>}
+          {!loading && !error && faqs.map((f, i) => (
+            <div key={f._id} className="card overflow-hidden">
               <button onClick={() => setOpen(open === i ? null : i)} className="flex w-full items-center justify-between gap-4 p-5 text-left">
-                <span className="text-base font-medium text-ink-800">{f.q}</span>
+                <span className="text-base font-medium text-ink-800">{f.question}</span>
                 <ChevronDown className={`h-5 w-5 shrink-0 text-ink-400 transition ${open === i ? 'rotate-180' : ''}`} />
               </button>
-              {open === i && <div className="px-5 pb-5 text-sm leading-relaxed text-ink-500 animate-fade-in">{f.a}</div>}
+              {open === i && <div className="px-5 pb-5 text-sm leading-relaxed text-ink-500 animate-fade-in">{f.answer}</div>}
             </div>
           ))}
         </div>

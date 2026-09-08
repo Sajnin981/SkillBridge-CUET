@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { Users, Eye, CheckCircle2, XCircle, Sparkles } from 'lucide-react';
+import { useSearchParams, useNavigate } from 'react-router-dom';
+import { Users, Eye, CheckCircle2, XCircle, Sparkles, FileText, MessageSquare } from 'lucide-react';
 import { PageContainer } from '@/components/layout/DashboardLayout';
 import { SearchBar } from '@/components/shared/SearchBar';
 import { Card } from '@/components/ui/Card';
@@ -11,31 +12,55 @@ import { SkeletonCard } from '@/components/ui/Skeleton';
 import { useToast } from '@/components/ui/Toast';
 import { applicationService } from '@/services/applicationService';
 import { aiService } from '@/services/aiService';
+import { messageService } from '@/services/messageService';
+import { api, normalizeError } from '@/api/axios';
 import type { Applicant } from '@/lib/types';
 
-const filters = ['All', 'Shortlisted', 'Reviewing', 'New', 'Rejected'];
+const filters = ['All', 'New', 'Shortlisted', 'Rejected'];
+
+async function openResumeFile(resumeUrl: string) {
+  const [, folder, filename] = resumeUrl.split('/').filter(Boolean);
+  const response = await api.get(`/files/${folder}/${filename}`, { responseType: 'blob' });
+  const url = URL.createObjectURL(response.data);
+  window.open(url, '_blank', 'noopener,noreferrer');
+  window.setTimeout(() => URL.revokeObjectURL(url), 60_000);
+}
 
 export default function ApplicantsPage() {
   const { toast } = useToast();
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState('All');
   const [selected, setSelected] = useState<Applicant | null>(null);
   const [list, setList] = useState<Applicant[]>([]);
   const [matches, setMatches] = useState<{ applicantId: string; matchScore: number; reason: string; skillsMatched: string[] }[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [messaging, setMessaging] = useState(false);
 
   useEffect(() => {
-    Promise.all([applicationService.getApplicants(), aiService.getCandidateMatches()]).then(([a, m]) => {
-      setList(a); setMatches(m); setLoading(false);
-    });
-  }, []);
+    setLoading(true);
+    setError('');
+    applicationService.getApplicants()
+      .then((items) => {
+        setList(items);
+        const targetId = searchParams.get('applicationId');
+        if (targetId) {
+          const target = items.find((a) => a.id === targetId);
+          if (target) setSelected(target);
+        }
+      })
+      .catch((err) => setError(normalizeError(err).message))
+      .finally(() => setLoading(false));
+    aiService.getCandidateMatches().then(setMatches).catch(() => setMatches([]));
+  }, [searchParams]);
 
   const filtered = list.filter((a) => {
     if (search && !a.name.toLowerCase().includes(search.toLowerCase()) && !a.skills.some((s) => s.toLowerCase().includes(search.toLowerCase()))) return false;
     if (filter === 'Shortlisted' && !a.shortlisted) return false;
     if (filter === 'Rejected' && !a.rejected) return false;
     if (filter === 'New' && a.status !== 'submitted') return false;
-    if (filter === 'Reviewing' && a.status !== 'reviewing') return false;
     return true;
   });
 
@@ -67,6 +92,34 @@ export default function ApplicantsPage() {
     }
   };
 
+  const messageApplicant = async (applicant: Applicant) => {
+    if (!applicant.studentId) {
+      toast({ title: 'Could not start conversation', description: 'Missing student reference.', variant: 'error' });
+      return;
+    }
+    setMessaging(true);
+    try {
+      const conversation = await messageService.startConversation({ studentId: applicant.studentId, opportunityId: applicant.opportunityId || undefined });
+      navigate(`/company/messages?conversationId=${conversation._id}`);
+    } catch (err) {
+      toast({ title: 'Could not start conversation', description: normalizeError(err).message, variant: 'error' });
+    } finally {
+      setMessaging(false);
+    }
+  };
+
+  const viewResume = async (applicant: Applicant) => {
+    if (!applicant.resumeUrl) {
+      toast({ title: 'No resume attached to this application', variant: 'info' });
+      return;
+    }
+    try {
+      await openResumeFile(applicant.resumeUrl);
+    } catch {
+      toast({ title: 'Could not open resume', variant: 'error' });
+    }
+  };
+
   return (
     <PageContainer>
       <div className="mb-6 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
@@ -88,12 +141,14 @@ export default function ApplicantsPage() {
 
       {loading ? (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">{[...Array(3)].map((_, i) => <SkeletonCard key={i} />)}</div>
+      ) : error ? (
+        <div className="card p-6 text-center text-sm text-danger-600">{error}</div>
       ) : filtered.length === 0 ? (
         <div className="card"><EmptyState icon={<Users className="h-7 w-7" />} title="No applicants yet" description="When students apply to your opportunities, their profiles will appear here with AI match scores." /></div>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {filtered.map((a) => {
-            const match = matches.find((m) => m.applicantId === a.id);
+            const match = matches.find((m) => m.applicantId === a.studentId);
             return (
               <Card key={a.id}>
                 <div className="flex items-start gap-3">
@@ -130,26 +185,21 @@ export default function ApplicantsPage() {
                 <p className="text-xs text-ink-400">{selected.email}</p>
               </div>
             </div>
-            <div className="grid grid-cols-3 gap-3 rounded-xl bg-ink-50 p-4 text-center">
-              <div><p className="text-lg font-bold text-ink-800">{selected.cgpa}</p><p className="text-xs text-ink-400">CGPA</p></div>
-              <div><p className="text-lg font-bold text-brand-600">{selected.matchScore}%</p><p className="text-xs text-ink-400">Match</p></div>
-              <div><p className="text-lg font-bold text-accent-600">{selected.resumeScore}</p><p className="text-xs text-ink-400">Resume</p></div>
-            </div>
             <div>
               <p className="mb-2 text-sm font-semibold text-ink-700">Skills</p>
               <div className="flex flex-wrap gap-1.5">
                 {selected.skills.map((s) => <span key={s} className="chip bg-ink-100 text-ink-600">{s}</span>)}
               </div>
             </div>
-            {matches.find((m) => m.applicantId === selected.id) && (
+            {matches.find((m) => m.applicantId === selected.studentId) && (
               <div className="rounded-xl bg-brand-50 p-4">
                 <p className="flex items-center gap-2 text-sm font-semibold text-brand-700"><Sparkles className="h-4 w-4" />AI Matching Explanation</p>
-                <p className="mt-2 text-sm text-brand-600">{matches.find((m) => m.applicantId === selected.id)!.reason}</p>
+                <p className="mt-2 text-sm text-brand-600">{matches.find((m) => m.applicantId === selected.studentId)!.reason}</p>
               </div>
             )}
             <div className="flex gap-2">
-              <Button variant="outline" className="flex-1"><Eye className="h-4 w-4" />View Resume</Button>
-              <Button className="flex-1">Message</Button>
+              <Button variant="outline" className="flex-1" onClick={() => viewResume(selected)}><FileText className="h-4 w-4" />View Resume</Button>
+              <Button className="flex-1" onClick={() => messageApplicant(selected)} disabled={messaging}><MessageSquare className="h-4 w-4" />{messaging ? 'Opening…' : 'Message'}</Button>
             </div>
           </div>
         )}
@@ -157,3 +207,4 @@ export default function ApplicantsPage() {
     </PageContainer>
   );
 }
+

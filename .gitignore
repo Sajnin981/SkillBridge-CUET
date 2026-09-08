@@ -1,2 +1,4 @@
 node_modules/
 .env
+# User uploaded files
+SkillBridge-backend/src/uploads/

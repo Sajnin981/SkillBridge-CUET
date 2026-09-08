@@ -7,7 +7,6 @@ interface ResumeAnalysis {
   gaps: string[];
   suggestions: string[];
   keywordsDetected: string[];
-  isPlaceholder: boolean;
 }
 
 interface Recommendation {
@@ -26,6 +25,16 @@ interface CandidateMatch {
 }
 
 export const aiService = {
+  async generateResume(): Promise<{ aiResumeUrl: string; shared: boolean }> {
+    const res = await api.post<ApiEnvelope<{ aiResumeUrl: string; shared: boolean }>>('/ai/resume-generate');
+    return res.data.data;
+  },
+
+  async shareResume(): Promise<{ sharedResumeUrl: string }> {
+    const res = await api.post<ApiEnvelope<{ sharedResumeUrl: string }>>('/ai/resume-share');
+    return res.data.data;
+  },
+
   async analyzeResume(resumeText?: string): Promise<{ score: number; summary: string; strengths: string[]; weaknesses: string[]; missingSkills: string[]; suggestions: string[] } | null> {
     const res = await api.post<ApiEnvelope<{ analysis: ResumeAnalysis }>>('/ai/resume-analysis', { resumeText });
     const a = res.data.data.analysis;
@@ -40,7 +49,7 @@ export const aiService = {
   },
 
   async getRecommendations(): Promise<{ opportunityId: string; title: string; company: string; matchScore: number; reason: string; missingSkills: string[] }[]> {
-    const res = await api.get<ApiEnvelope<{ recommendations: Recommendation[]; isPlaceholder: boolean }>>('/ai/recommendations');
+    const res = await api.get<ApiEnvelope<{ recommendations: Recommendation[] }>>('/ai/recommendations');
     return res.data.data.recommendations.map((r) => ({
       opportunityId: r.opportunityId,
       title: r.title || 'Opportunity',
@@ -52,7 +61,7 @@ export const aiService = {
   },
 
   async getCandidateMatches(opportunityId?: string): Promise<{ applicantId: string; matchScore: number; reason: string; skillsMatched: string[] }[]> {
-    const res = await api.post<ApiEnvelope<{ candidates: CandidateMatch[]; isPlaceholder: boolean }>>('/ai/candidate-matching', { opportunityId });
+    const res = await api.post<ApiEnvelope<{ candidates: CandidateMatch[] }>>('/ai/candidate-matching', { opportunityId });
     return res.data.data.candidates.map((c) => ({
       applicantId: c.studentId,
       matchScore: c.matchScore,

@@ -9,6 +9,8 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { SkeletonCard } from '@/components/ui/Skeleton';
 import { useToast } from '@/components/ui/Toast';
 import { studentService } from '@/services/studentService';
+import { aiService } from '@/services/aiService';
+import { api } from '@/api/axios';
 import type { StudentProfile } from '@/lib/types';
 
 export default function StudentResumePage() {
@@ -17,12 +19,19 @@ export default function StudentResumePage() {
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [generating, setGenerating] = useState(false);
+  const [generatedResumeUrl, setGeneratedResumeUrl] = useState('');
+  const [shared, setShared] = useState(false);
   const [draft, setDraft] = useState({ bio: '', skills: '', education: '', experience: '', certifications: '', achievements: '', portfolio: '' });
   const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     studentService.getProfile().then((p) => {
       setProfile(p);
+      if (!p) {
+        setLoading(false);
+        return;
+      }
       setDraft({
         bio: p.bio,
         skills: p.skills.map((s) => s.name).join(', '),
@@ -64,6 +73,38 @@ export default function StudentResumePage() {
     fileRef.current?.click();
   };
 
+  const handleGenerate = () => {
+    setGenerating(true);
+    aiService.generateResume().then((result) => {
+      setGeneratedResumeUrl(result.aiResumeUrl);
+      setShared(result.shared);
+      toast({ title: 'AI resume generated', description: 'Review it below before sharing it to your profile.', variant: 'success' });
+    }).catch(() => toast({ title: 'Could not generate resume', description: 'Complete some profile information and try again.', variant: 'error' })).finally(() => setGenerating(false));
+  };
+
+  const openGeneratedResume = async (download = false) => {
+    if (!generatedResumeUrl) return;
+    const [, folder, filename] = generatedResumeUrl.split('/').filter(Boolean);
+    const response = await api.get(`/files/${folder}/${filename}`, { responseType: 'blob' });
+    const url = URL.createObjectURL(response.data);
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    if (download) {
+      anchor.download = 'ai-resume.pdf';
+      anchor.click();
+    } else {
+      window.open(url, '_blank', 'noopener,noreferrer');
+    }
+    window.setTimeout(() => URL.revokeObjectURL(url), 60_000);
+  };
+
+  const handleShare = () => {
+    aiService.shareResume().then(() => {
+      setShared(true);
+      toast({ title: 'AI resume shared to profile', variant: 'success' });
+    }).catch(() => toast({ title: 'Could not share resume', variant: 'error' }));
+  };
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -85,12 +126,16 @@ export default function StudentResumePage() {
   return (
     <PageContainer>
       <div className="mb-6">
-        <h2 className="font-display text-2xl font-bold text-ink-800">Resume Builder</h2>
-        <p className="mt-1 text-sm text-ink-500">Your professional resume, assembled from your profile data. Upload a PDF to attach to applications.</p>
+        <h2 className="font-display text-2xl font-bold text-ink-800">AI Resume</h2>
+        <p className="mt-1 text-sm text-ink-500">Generate a professional PDF from your actual profile details, improve it, and choose whether to share it as your CV.</p>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="lg:col-span-2 space-y-6">
+          <Card>
+            <CardHeader title="AI Resume" subtitle="Generate a PDF from your current profile data." action={<Button onClick={handleGenerate} disabled={generating}>{generating ? 'Generating…' : 'Generate PDF'}</Button>} />
+            {generatedResumeUrl && <div className="flex flex-wrap items-center gap-3 rounded-xl bg-brand-50 p-4"><FileText className="h-5 w-5 text-brand-600" /><span className="flex-1 text-sm text-brand-700">AI-generated resume ready</span><Button size="sm" variant="outline" onClick={() => openGeneratedResume().catch(() => toast({ title: 'Could not preview resume', variant: 'error' }))}>Preview</Button><Button size="sm" variant="outline" onClick={() => openGeneratedResume(true).catch(() => toast({ title: 'Could not download resume', variant: 'error' }))}>Download</Button>{!shared && <Button size="sm" variant="outline" onClick={handleShare}>Share to Profile</Button>}{shared && <Badge tone="success">Shared</Badge>}</div>}
+          </Card>
           <Card>
             <CardHeader title="Edit Resume Details" subtitle="These supported profile fields are saved to your student account." action={<Button size="sm" onClick={handleSave} disabled={saving}>{saving ? 'Saving…' : 'Save details'}</Button>} />
             <div className="space-y-4">
@@ -107,7 +152,7 @@ export default function StudentResumePage() {
           </Card>
           <Card>
             <CardHeader title="Resume Upload" action={<Button variant="outline" size="sm" onClick={handleUpload} disabled={uploading}><Upload className="h-3.5 w-3.5" />{uploading ? 'Uploading…' : 'Upload New'}</Button>} />
-            <input ref={fileRef} type="file" accept=".pdf,.doc,.docx" className="hidden" onChange={handleFileChange} />
+            <input ref={fileRef} type="file" accept=".pdf,application/pdf" className="hidden" onChange={handleFileChange} />
             {profile?.resumeUrl ? (
               <div className="flex items-center gap-3 rounded-xl bg-ink-50 p-4">
                 <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-brand-100 text-brand-600"><FileText className="h-6 w-6" /></div>

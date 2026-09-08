@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Pencil, Upload, Plus, Github, Linkedin, Globe, Award, FolderGit2, GraduationCap, Briefcase, FileText, CheckCircle2, User } from 'lucide-react';
 import { PageContainer } from '@/components/layout/DashboardLayout';
 import { Card, CardHeader } from '@/components/ui/Card';
@@ -12,6 +12,7 @@ import { SkeletonCard } from '@/components/ui/Skeleton';
 import { useToast } from '@/components/ui/Toast';
 import { useAuth } from '@/context/AuthContext';
 import { studentService } from '@/services/studentService';
+import { api } from '@/api/axios';
 import type { StudentProfile } from '@/lib/types';
 
 export default function StudentProfilePage() {
@@ -21,12 +22,39 @@ export default function StudentProfilePage() {
   const [profile, setProfile] = useState<StudentProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [editForm, setEditForm] = useState({ bio: '', phone: '', location: '', skills: '' });
+  const [editForm, setEditForm] = useState({ bio: '', phone: '', skills: '' });
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState(false);
+
+  const openResume = async () => {
+    if (!profile?.resumeUrl) return;
+    const [, folder, filename] = profile.resumeUrl.split('/').filter(Boolean);
+    const response = await api.get(`/files/${folder}/${filename}`, { responseType: 'blob' });
+    const url = URL.createObjectURL(response.data);
+    window.open(url, '_blank', 'noopener,noreferrer');
+    window.setTimeout(() => URL.revokeObjectURL(url), 60_000);
+  };
+
+  const uploadResume = async (file?: File) => {
+    if (!file) return;
+    setUploading(true);
+    try {
+      const result = await studentService.uploadResume(file);
+      setProfile((current) => current ? { ...current, resumeUrl: result.resumeUrl } : current);
+      toast({ title: 'Resume uploaded', variant: 'success' });
+    } catch {
+      toast({ title: 'Resume upload failed', variant: 'error' });
+    } finally {
+      setUploading(false);
+    }
+  };
 
   useEffect(() => {
     studentService.getProfile().then((p) => {
       setProfile(p);
-      setEditForm({ bio: p.bio, phone: p.phone, location: p.location, skills: p.skills.map((s) => s.name).join(', ') });
+      if (p) {
+        setEditForm({ bio: p.bio, phone: p.phone, skills: p.skills.map((s) => s.name).join(', ') });
+      }
       setLoading(false);
     }).catch(() => setLoading(false));
   }, []);
@@ -34,7 +62,7 @@ export default function StudentProfilePage() {
   const handleSave = () => {
     setSaving(true);
     const skills = editForm.skills.split(',').map((s) => s.trim()).filter(Boolean);
-    studentService.updateProfile({ bio: editForm.bio, skills }).then((p) => {
+    studentService.updateProfile({ bio: editForm.bio, phone: editForm.phone, skills }).then((p) => {
       setProfile(p);
       setSaving(false);
       setEditOpen(false);
@@ -73,7 +101,7 @@ export default function StudentProfilePage() {
       <div className="mt-6 grid gap-6 lg:grid-cols-3">
         <div className="space-y-6 lg:col-span-2">
           <Card>
-            <CardHeader title="Resume" subtitle="Your latest CV attached to applications" action={<Button variant="outline" size="sm"><Upload className="h-3.5 w-3.5" />Upload</Button>} />
+            <CardHeader title="Resume" subtitle="Your latest CV attached to applications" action={<><input ref={fileRef} type="file" accept=".pdf,application/pdf" className="hidden" onChange={(event) => uploadResume(event.target.files?.[0])} /><Button variant="outline" size="sm" onClick={() => fileRef.current?.click()} disabled={uploading}><Upload className="h-3.5 w-3.5" />{uploading ? 'Uploading…' : 'Upload'}</Button></>} />
             {profile?.resumeUrl ? (
               <div className="flex items-center gap-3 rounded-xl bg-ink-50 p-4">
                 <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-brand-100 text-brand-600"><FileText className="h-6 w-6" /></div>
@@ -81,10 +109,10 @@ export default function StudentProfilePage() {
                   <p className="text-sm font-semibold text-ink-800">My Resume</p>
                   <p className="text-xs text-ink-400">{profile.resumeUrl}</p>
                 </div>
-                <Button variant="ghost" size="sm">View</Button>
+                <Button variant="ghost" size="sm" onClick={() => openResume().catch(() => toast({ title: 'Could not open resume', variant: 'error' }))}>View</Button>
               </div>
             ) : (
-              <EmptyState icon={<FileText className="h-6 w-6" />} title="No resume uploaded" description="Upload your CV to apply for opportunities and unlock AI recommendations." action={<Button size="sm"><Upload className="h-3.5 w-3.5" />Upload Resume</Button>} />
+              <EmptyState icon={<FileText className="h-6 w-6" />} title="No resume uploaded" description="Upload your CV to apply for opportunities and unlock AI recommendations." action={<Button size="sm" onClick={() => fileRef.current?.click()}><Upload className="h-3.5 w-3.5" />Upload Resume</Button>} />
             )}
           </Card>
 
@@ -223,7 +251,6 @@ export default function StudentProfilePage() {
             <Field label="Department"><Input defaultValue={profile?.department} disabled /></Field>
             <Field label="Batch"><Input defaultValue={profile?.batch} disabled /></Field>
             <Field label="Phone"><Input value={editForm.phone} onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })} /></Field>
-            <Field label="Location"><Input value={editForm.location} onChange={(e) => setEditForm({ ...editForm, location: e.target.value })} /></Field>
           </div>
           <Field label="Skills (comma-separated)"><Input value={editForm.skills} onChange={(e) => setEditForm({ ...editForm, skills: e.target.value })} placeholder="React, Node.js, Python" /></Field>
           <Field label="Bio"><Textarea value={editForm.bio} onChange={(e) => setEditForm({ ...editForm, bio: e.target.value })} placeholder="Tell recruiters about yourself…" /></Field>

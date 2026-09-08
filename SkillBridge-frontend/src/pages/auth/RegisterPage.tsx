@@ -73,7 +73,7 @@ export default function RegisterPage() {
           resume: resumeFile || undefined,
         });
         toast({ title: 'Account created!', description: `Welcome, ${user.name.split(' ')[0]}. Verification is pending.`, variant: 'success' });
-        navigate('/student');
+        navigate('/verification-pending', { state: { role: 'student' } });
       } else {
         await authService.registerCompany({
           companyName: companyName.trim(),
@@ -88,11 +88,12 @@ export default function RegisterPage() {
           logo: logoFile || undefined,
         });
         toast({ title: 'Application submitted!', description: 'Your company registration is pending admin approval.', variant: 'success' });
-        navigate('/verification-pending');
+        navigate('/verification-pending', { state: { role: 'company' } });
       }
     } catch (err) {
       const apiErr = normalizeError(err);
-      toast({ title: 'Registration failed', description: apiErr.message, variant: 'error' });
+    const fieldErrors = apiErr.errors?.map((item) => `${item.field}: ${item.message}`).join(' · ');
+    toast({ title: 'Registration failed', description: fieldErrors || apiErr.message, variant: 'error' });
     } finally {
       setLoading(false);
     }
@@ -139,6 +140,8 @@ export default function RegisterPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder={role === 'student' ? 'you@cuet.ac.bd' : 'hr@company.com'}
+                pattern={role === 'student' ? '^[^\\s@]+@(?:[^\\s@]+\\.)*cuet\\.ac\\.bd$' : undefined}
+                title={role === 'student' ? 'Use a valid CUET email address.' : 'Use a valid email address.'}
                 className="pl-10"
               />
             </Field>
@@ -149,7 +152,9 @@ export default function RegisterPage() {
                 minLength={8}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="Min. 8 characters"
+                placeholder="8+ chars, upper/lowercase and number"
+                pattern="(?=.*[A-Z])(?=.*[a-z])(?=.*[0-9]).{8,}"
+                title="Use at least 8 characters with uppercase, lowercase, and a number."
                 className="pl-10 pr-10"
               />
               <button type="button" onClick={() => setShowPwd(!showPwd)} className="absolute right-3 top-1/2 -translate-y-1/2 text-ink-400 hover:text-ink-600">

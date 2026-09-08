@@ -14,6 +14,7 @@ import { applicationService } from '@/services/applicationService';
 import { studentService } from '@/services/studentService';
 import type { Opportunity } from '@/lib/types';
 import { daysLeft, timeAgo } from '@/lib/utils';
+import { normalizeError } from '@/api/axios';
 
 const typeTones: Record<string, 'brand' | 'accent' | 'success' | 'warning' | 'danger' | 'neutral' | 'purple'> = {
   Internship: 'brand', Job: 'success', Freelancing: 'accent', Research: 'purple', Competition: 'warning', Scholarship: 'danger', 'Part-time': 'neutral',
@@ -29,6 +30,8 @@ export default function OpportunityDetailsPage() {
   const [applying, setApplying] = useState(false);
   const [togglingSave, setTogglingSave] = useState(false);
   const [coverLetter, setCoverLetter] = useState('');
+  const [resumeFile, setResumeFile] = useState<File | undefined>();
+  const [profileResumeUrl, setProfileResumeUrl] = useState('');
   const [opportunity, setOpportunity] = useState<Opportunity | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -45,6 +48,7 @@ export default function OpportunityDetailsPage() {
           return item._id === id || item.id === id;
         }));
       }).catch(() => {});
+      studentService.getRawProfile().then((profile) => setProfileResumeUrl(profile?.resumeUrl || '')).catch(() => {});
       applicationService.getApplications().then((apps) => {
         setApplied(apps.some((a) => a.opportunityId === id));
       }).catch(() => {});
@@ -65,16 +69,22 @@ export default function OpportunityDetailsPage() {
 
   const submitApplication = () => {
     if (!id) return;
+    if (!profileResumeUrl && !resumeFile) {
+      toast({ title: 'Resume required', description: 'Upload a PDF resume before submitting this application.', variant: 'error' });
+      return;
+    }
     setApplying(true);
-    applicationService.apply(id, { coverLetter }).then(() => {
+    applicationService.apply(id, { coverLetter }, resumeFile).then(() => {
       setApplied(true);
       setApplying(false);
       setApplyOpen(false);
       setCoverLetter('');
+      setResumeFile(undefined);
       toast({ title: 'Application submitted!', description: `${opportunity.company} will review your application.`, variant: 'success' });
-    }).catch(() => {
+    }).catch((err) => {
       setApplying(false);
-      toast({ title: 'Failed to submit application', variant: 'error' });
+      const apiErr = normalizeError(err);
+      toast({ title: 'Failed to submit application', description: apiErr.errors?.map((item) => item.message).join(' · ') || apiErr.message, variant: 'error' });
     });
   };
 
@@ -218,7 +228,9 @@ export default function OpportunityDetailsPage() {
           </div>
           <div className="rounded-xl border border-ink-100 p-4">
             <p className="text-sm font-semibold text-ink-800">Resume</p>
-            <p className="mt-1 text-xs text-ink-500">Your latest resume will be attached automatically.</p>
+            <p className="mt-1 text-xs text-ink-500">{profileResumeUrl ? 'Your uploaded resume will be attached automatically.' : 'Upload a PDF resume to apply.'}</p>
+            {!profileResumeUrl && <input type="file" accept=".pdf,application/pdf" onChange={(event) => setResumeFile(event.target.files?.[0])} className="mt-3 w-full text-sm text-ink-600" />}
+            {resumeFile && <p className="mt-2 text-xs text-success-600">Selected: {resumeFile.name}</p>}
           </div>
           <div>
             <label className="label">Cover letter (optional)</label>

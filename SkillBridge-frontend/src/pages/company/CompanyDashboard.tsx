@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Briefcase, Users, Eye, Plus, CheckCircle2, Star } from 'lucide-react';
+import { Briefcase, Users, Plus, CheckCircle2, Star } from 'lucide-react';
 import { PageContainer } from '@/components/layout/DashboardLayout';
 import { StatCard } from '@/components/shared/StatCard';
 import { Card, CardHeader } from '@/components/ui/Card';
@@ -17,11 +17,12 @@ export default function CompanyDashboard() {
   const { user } = useAuth();
   const [opportunities, setOpportunities] = useState<Opportunity[]>([]);
   const [applicants, setApplicants] = useState<Applicant[]>([]);
+  const [analytics, setAnalytics] = useState<{ totalOpportunities: number; totalApplications: number; newApplicants: number; shortlisted: number; rejected: number } | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    Promise.all([companyService.listMyOpportunities(), applicationService.getApplicants()]).then(([o, a]) => {
-      setOpportunities(o); setApplicants(a); setLoading(false);
+    Promise.all([companyService.listMyOpportunities(), applicationService.getApplicants(), companyService.getAnalytics()]).then(([o, a, stats]) => {
+      setOpportunities(o); setApplicants(a); setAnalytics(stats); setLoading(false);
     }).catch(() => setLoading(false));
   }, []);
 
@@ -42,10 +43,10 @@ export default function CompanyDashboard() {
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label="Active Opportunities" value={opportunities.length} icon={<Briefcase className="h-5 w-5" />} tone="brand" />
-        <StatCard label="Total Applicants" value={applicants.length} icon={<Users className="h-5 w-5" />} tone="accent" />
-        <StatCard label="Profile Views" value={0} icon={<Eye className="h-5 w-5" />} tone="success" />
-        <StatCard label="Shortlisted" value={applicants.filter((a) => a.shortlisted).length} icon={<Star className="h-5 w-5" />} tone="warning" />
+        <StatCard label="Active Opportunities" value={analytics?.totalOpportunities ?? opportunities.length} icon={<Briefcase className="h-5 w-5" />} tone="brand" />
+        <StatCard label="Total Applicants" value={analytics?.totalApplications ?? applicants.length} icon={<Users className="h-5 w-5" />} tone="accent" />
+        <StatCard label="New Applicants" value={analytics?.newApplicants ?? applicants.filter((a) => a.status === 'submitted').length} icon={<Users className="h-5 w-5" />} tone="success" />
+        <StatCard label="Shortlisted" value={analytics?.shortlisted ?? applicants.filter((a) => a.shortlisted).length} icon={<Star className="h-5 w-5" />} tone="warning" />
       </div>
 
       <div className="mt-6 grid gap-6 lg:grid-cols-3">

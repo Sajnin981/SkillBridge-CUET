@@ -79,7 +79,7 @@ export default function AdminDashboard() {
 
           <Card>
             <CardHeader title="AI Activity" action={<Badge tone="brand"><Sparkles className="h-3 w-3" />AI</Badge>} />
-            <p className="px-4 pb-4 text-sm text-ink-500">AI features are running in placeholder mode. Logs are recorded for auditing.</p>
+            <p className="px-4 pb-4 text-sm text-ink-500">AI activity is based on persisted profile, opportunity, and applicant data.</p>
           </Card>
         </div>
       </div>

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Bell, CheckCircle2, MessageSquare, Briefcase, Info } from 'lucide-react';
 import { PageContainer } from '@/components/layout/DashboardLayout';
+import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/Button';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Skeleton } from '@/components/ui/Skeleton';
@@ -52,7 +53,7 @@ export default function NotificationsPage() {
           {visible.map((n) => {
             const Icon = icons[n.type];
             return (
-              <div key={n.id} className={`card flex items-start gap-4 p-4 ${!n.read ? 'ring-1 ring-brand-200/60' : ''}`}>
+              <Link to={n.link || `/${user?.role || 'student'}/notifications`} key={n.id} className={`card flex items-start gap-4 p-4 ${!n.read ? 'ring-1 ring-brand-200/60' : ''}`}>
                 <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${tones[n.type]}`}><Icon className="h-5 w-5" /></div>
                 <div className="flex-1">
                   <div className="flex items-center gap-2">
@@ -63,7 +64,7 @@ export default function NotificationsPage() {
                   <p className="mt-1 text-xs text-ink-400">{timeAgo(n.time)}</p>
                 </div>
                 <button onClick={() => toggleRead(n.id)} className="text-xs font-medium text-brand-600 hover:text-brand-700">{n.read ? 'Mark unread' : 'Mark read'}</button>
-              </div>
+              </Link>
             );
           })}
         </div>

@@ -9,9 +9,9 @@ import { SkeletonCard } from '@/components/ui/Skeleton';
 import { Link } from 'react-router-dom';
 import { applicationService } from '@/services/applicationService';
 
-const stages = ['submitted', 'reviewing', 'shortlisted', 'interview', 'offered', 'rejected'];
+const stages = ['submitted', 'shortlisted', 'rejected'];
 const statusTone: Record<string, 'neutral' | 'brand' | 'accent' | 'success' | 'warning' | 'danger' | 'purple'> = {
-  submitted: 'neutral', reviewing: 'brand', shortlisted: 'accent', interview: 'purple', offered: 'success', rejected: 'danger',
+  submitted: 'neutral', shortlisted: 'accent', rejected: 'danger',
 };
 
 export default function AppliedOpportunitiesPage() {
@@ -29,7 +29,7 @@ export default function AppliedOpportunitiesPage() {
         <p className="mt-1 text-sm text-ink-500">Track the status of all your applications in one place.</p>
       </div>
 
-      <div className="mb-6 grid grid-cols-3 gap-3 sm:grid-cols-6">
+      <div className="mb-6 grid grid-cols-3 gap-3">
         {stages.map((s) => {
           const count = applications.filter((a) => a.status === s).length;
           return (
@@ -59,7 +59,7 @@ export default function AppliedOpportunitiesPage() {
               </div>
               <div className="mt-4">
                 <div className="h-2 overflow-hidden rounded-full bg-ink-100">
-                  <div className={`h-full rounded-full ${a.status === 'rejected' ? 'bg-danger-500' : a.status === 'offered' ? 'bg-success-500' : 'bg-brand-600'}`} style={{ width: `${(stages.indexOf(a.status) / (stages.length - 1)) * 100}%` }} />
+                  <div className={`h-full rounded-full ${a.status === 'rejected' ? 'bg-danger-500' : a.status === 'shortlisted' ? 'bg-success-500' : 'bg-brand-600'}`} style={{ width: `${(stages.indexOf(a.status) / (stages.length - 1)) * 100}%` }} />
                 </div>
               </div>
             </Card>

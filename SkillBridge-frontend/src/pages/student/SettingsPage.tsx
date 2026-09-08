@@ -1,24 +1,68 @@
-import { useState } from 'react';
-import { User, Bell, Lock, Globe, Trash2, Mail, Smartphone } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { User, Bell, Lock, Mail, Smartphone } from 'lucide-react';
 import { PageContainer } from '@/components/layout/DashboardLayout';
 import { Card, CardHeader } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
-import { Field, Input, Select } from '@/components/ui/Input';
+import { Field, Input, Textarea } from '@/components/ui/Input';
 import { useToast } from '@/components/ui/Toast';
+import { studentService, type StudentSettings } from '@/services/studentService';
+import { authService } from '@/services/authService';
+import type { StudentProfile } from '@/lib/types';
 
 const sections = [
   { id: 'profile', label: 'Profile', icon: User },
   { id: 'notifications', label: 'Notifications', icon: Bell },
   { id: 'security', label: 'Security', icon: Lock },
-  { id: 'privacy', label: 'Privacy', icon: Globe },
 ];
 
 export default function SettingsPage() {
   const { toast } = useToast();
   const [active, setActive] = useState('profile');
-  const [notifPrefs, setNotifPrefs] = useState({ email: true, push: true, applications: true, recommendations: true, messages: false });
+  const [settings, setSettings] = useState<StudentSettings | null>(null);
+  const [profile, setProfile] = useState<StudentProfile | null>(null);
+  const [profileDraft, setProfileDraft] = useState({ phone: '', bio: '' });
+  const [passwordDraft, setPasswordDraft] = useState({ current: '', next: '', confirm: '' });
+  const [loading, setLoading] = useState(true);
 
-  const save = () => toast({ title: 'Settings saved', variant: 'success' });
+  useEffect(() => {
+    Promise.all([studentService.getSettings(), studentService.getProfile()])
+      .then(([savedSettings, savedProfile]) => {
+        setSettings(savedSettings);
+        setProfile(savedProfile);
+        setProfileDraft({ phone: savedProfile?.phone || '', bio: savedProfile?.bio || '' });
+      })
+      .catch(() => toast({ title: 'Could not load settings', variant: 'error' }))
+      .finally(() => setLoading(false));
+  }, [toast]);
+
+  const save = () => {
+    if (!settings) return;
+    studentService.updateSettings(settings).then(setSettings).then(() => toast({ title: 'Settings saved', variant: 'success' })).catch(() => toast({ title: 'Could not save settings', variant: 'error' }));
+  };
+
+  const saveProfile = async () => {
+    try {
+      const updated = await studentService.updateProfile({ bio: profileDraft.bio });
+      setProfile(updated);
+      toast({ title: 'Profile settings saved', variant: 'success' });
+    } catch {
+      toast({ title: 'Could not save profile settings', variant: 'error' });
+    }
+  };
+
+  const changePassword = async () => {
+    if (passwordDraft.next !== passwordDraft.confirm) {
+      toast({ title: 'New passwords do not match', variant: 'error' });
+      return;
+    }
+    try {
+      await authService.changePassword(passwordDraft.current, passwordDraft.next);
+      setPasswordDraft({ current: '', next: '', confirm: '' });
+      toast({ title: 'Password updated', variant: 'success' });
+    } catch {
+      toast({ title: 'Could not update password', variant: 'error' });
+    }
+  };
 
   return (
     <PageContainer>
@@ -42,13 +86,13 @@ export default function SettingsPage() {
               <CardHeader title="Profile Settings" subtitle="Manage your personal information" />
               <div className="space-y-4">
                 <div className="grid gap-4 sm:grid-cols-2">
-                  <Field label="Full Name"><Input defaultValue="Rahim Ahmed" /></Field>
-                  <Field label="Email"><Input defaultValue="rahim.ahmed@cuet.ac.bd" /></Field>
-                  <Field label="Phone"><Input defaultValue="+880 1700-000000" /></Field>
-                  <Field label="Location"><Input defaultValue="Chittagong, Bangladesh" /></Field>
+                  <Field label="Full Name"><Input value={profile?.name || ''} disabled /></Field>
+                  <Field label="Email"><Input value={profile?.email || ''} disabled /></Field>
+                  <Field label="Phone"><Input value={profileDraft.phone} disabled /></Field>
+                  <Field label="Department"><Input value={profile?.department || ''} disabled /></Field>
                 </div>
-                <Field label="Bio"><Input defaultValue="Final-year CSE student at CUET passionate about building scalable web applications." /></Field>
-                <Button onClick={save}>Save changes</Button>
+                <Field label="Bio"><Textarea value={profileDraft.bio} onChange={(event) => setProfileDraft({ ...profileDraft, bio: event.target.value })} /></Field>
+                <Button onClick={saveProfile} disabled={loading}>Save changes</Button>
               </div>
             </Card>
           )}
@@ -73,10 +117,10 @@ export default function SettingsPage() {
                       </div>
                     </div>
                     <button
-                      onClick={() => setNotifPrefs({ ...notifPrefs, [p.key]: !notifPrefs[p.key] })}
-                      className={`relative h-6 w-11 rounded-full transition ${notifPrefs[p.key] ? 'bg-brand-600' : 'bg-ink-200'}`}
+                      onClick={() => settings && setSettings({ ...settings, notifications: { ...settings.notifications, [p.key]: !settings.notifications[p.key] } })}
+                      className={`relative h-6 w-11 rounded-full transition ${settings?.notifications[p.key] ? 'bg-brand-600' : 'bg-ink-200'}`}
                     >
-                      <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition ${notifPrefs[p.key] ? 'left-[22px]' : 'left-0.5'}`} />
+                      <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition ${settings?.notifications[p.key] ? 'left-[22px]' : 'left-0.5'}`} />
                     </button>
                   </div>
                 ))}
@@ -89,32 +133,10 @@ export default function SettingsPage() {
             <Card>
               <CardHeader title="Security" subtitle="Manage your password and account security" />
               <div className="space-y-4">
-                <Field label="Current Password"><Input type="password" placeholder="••••••••" /></Field>
-                <Field label="New Password"><Input type="password" placeholder="••••••••" /></Field>
-                <Field label="Confirm New Password"><Input type="password" placeholder="••••••••" /></Field>
-                <Button onClick={save}>Update password</Button>
-                <div className="mt-6 rounded-xl bg-danger-50 p-4">
-                  <p className="text-sm font-semibold text-danger-700">Danger Zone</p>
-                  <p className="mt-1 text-xs text-danger-600">Permanently delete your account and all data.</p>
-                  <Button variant="danger" size="sm" className="mt-3"><Trash2 className="h-3.5 w-3.5" />Delete account</Button>
-                </div>
-              </div>
-            </Card>
-          )}
-
-          {active === 'privacy' && (
-            <Card>
-              <CardHeader title="Privacy" subtitle="Control your profile visibility" />
-              <div className="space-y-3">
-                <div className="flex items-center justify-between rounded-xl border border-ink-100 p-4">
-                  <div><p className="text-sm font-medium text-ink-700">Public profile</p><p className="text-xs text-ink-400">Allow companies to view your profile</p></div>
-                  <Select defaultValue="Public" className="w-32"><option>Public</option><option>Private</option></Select>
-                </div>
-                <div className="flex items-center justify-between rounded-xl border border-ink-100 p-4">
-                  <div><p className="text-sm font-medium text-ink-700">Show in search</p><p className="text-xs text-ink-400">Appear in candidate search results</p></div>
-                  <Select defaultValue="Yes" className="w-32"><option>Yes</option><option>No</option></Select>
-                </div>
-                <Button onClick={save}>Save privacy settings</Button>
+                <Field label="Current Password"><Input type="password" value={passwordDraft.current} onChange={(event) => setPasswordDraft({ ...passwordDraft, current: event.target.value })} /></Field>
+                <Field label="New Password"><Input type="password" value={passwordDraft.next} onChange={(event) => setPasswordDraft({ ...passwordDraft, next: event.target.value })} /></Field>
+                <Field label="Confirm New Password"><Input type="password" value={passwordDraft.confirm} onChange={(event) => setPasswordDraft({ ...passwordDraft, confirm: event.target.value })} /></Field>
+                <Button onClick={changePassword}>Update password</Button>
               </div>
             </Card>
           )}
