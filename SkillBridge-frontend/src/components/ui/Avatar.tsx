@@ -20,7 +20,7 @@ const sizes = {
 
 export function Avatar({ name, src, size = 'md', className, ring }: AvatarProps) {
   const [failed, setFailed] = useState(false);
-  const normalizedSrc = src ? resolveAssetUrl(src) : '';
+  const normalizedSrc = src && (src.startsWith('/') || src.startsWith('http://') || src.startsWith('https://')) ? resolveAssetUrl(src) : '';
   const showImage = Boolean(normalizedSrc) && !failed;
   const color = colorFromString(name);
   return (
