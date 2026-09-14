@@ -267,8 +267,7 @@ export default function StudentProfilePage() {
             <div>
               <input ref={avatarRef} type="file" accept=".jpg,.jpeg,.png,.webp" className="hidden" onChange={(event) => uploadAvatar(event.target.files?.[0])} />
               <div className="flex gap-2">
-                <Button variant="outline" size="sm" onClick={() => avatarRef.current?.click()} disabled={avatarUploading}><Upload className="h-3.5 w-3.5" />{avatarUploading ? 'Uploading…' : 'Upload photo'}</Button>
-                <Button variant="outline" size="sm" onClick={deleteAvatar}><Trash2 className="h-3.5 w-3.5" />Delete</Button>
+                {profile?.avatar?.trim() ? <Button variant="outline" size="sm" onClick={deleteAvatar}><Trash2 className="h-3.5 w-3.5" />Delete</Button> : <Button variant="outline" size="sm" onClick={() => avatarRef.current?.click()} disabled={avatarUploading}><Upload className="h-3.5 w-3.5" />{avatarUploading ? 'Uploading…' : 'Upload photo'}</Button>}
               </div>
               <p className="mt-1.5 text-xs text-ink-400">JPG, PNG, or WEBP</p>
             </div>

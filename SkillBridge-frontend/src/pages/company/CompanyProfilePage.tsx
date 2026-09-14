@@ -187,8 +187,7 @@ export default function CompanyProfilePage() {
             <div>
               <input ref={logoRef} type="file" accept=".jpg,.jpeg,.png,.webp" className="hidden" onChange={(event) => uploadLogo(event.target.files?.[0])} />
               <div className="flex gap-2">
-                <Button variant="outline" size="sm" onClick={() => logoRef.current?.click()} disabled={logoUploading}><Upload className="h-3.5 w-3.5" />{logoUploading ? 'Uploading…' : 'Upload logo'}</Button>
-                <Button variant="outline" size="sm" onClick={deleteLogo}><Trash2 className="h-3.5 w-3.5" />Delete</Button>
+                {company?.logo?.trim() ? <Button variant="outline" size="sm" onClick={deleteLogo}><Trash2 className="h-3.5 w-3.5" />Delete</Button> : <Button variant="outline" size="sm" onClick={() => logoRef.current?.click()} disabled={logoUploading}><Upload className="h-3.5 w-3.5" />{logoUploading ? 'Uploading…' : 'Upload logo'}</Button>}
               </div>
               <p className="mt-1.5 text-xs text-ink-400">Square image, JPG/PNG/WEBP</p>
             </div>

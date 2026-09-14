@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/Badge';
 import { Modal } from '@/components/ui/Modal';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { SkeletonCard } from '@/components/ui/Skeleton';
+import { Avatar } from '@/components/ui/Avatar';
 import { useToast } from '@/components/ui/Toast';
 import { applicationService } from '@/services/applicationService';
 import { aiService } from '@/services/aiService';
@@ -152,7 +153,7 @@ export default function ApplicantsPage() {
             return (
               <Card key={a.id}>
                 <div className="flex items-start gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-brand-100 text-sm font-semibold text-brand-700">{a.avatar}</div>
+                  <Avatar name={a.name} src={a.avatar} size="md" />
                   <div className="flex-1">
                     <p className="text-base font-semibold text-ink-800">{a.name}</p>
                     <p className="text-sm text-ink-500">{a.department} · Batch {a.batch}</p>

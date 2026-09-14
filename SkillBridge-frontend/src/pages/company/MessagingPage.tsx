@@ -9,6 +9,7 @@ interface Conversation {
   id: string;
   name: string;
   avatar: string;
+  participantPath?: string;
   role: string;
   last: string;
   time: string;

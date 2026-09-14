@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { SkeletonCard } from '@/components/ui/Skeleton';
+import { Avatar } from '@/components/ui/Avatar';
 import { useAuth } from '@/context/AuthContext';
 import { companyService } from '@/services/companyService';
 import { applicationService } from '@/services/applicationService';
@@ -82,7 +83,7 @@ export default function CompanyDashboard() {
               <div className="space-y-3">
                 {applicants.slice(0, 4).map((a) => (
                   <div key={a.id} className="flex items-center gap-3">
-                    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-brand-100 text-sm font-semibold text-brand-700">{a.avatar}</div>
+                    <Avatar name={a.name} src={a.avatar} size="sm" />
                     <div className="flex-1">
                       <p className="text-sm font-medium text-ink-800">{a.name}</p>
                       <p className="text-xs text-ink-400">{a.department} · {a.matchScore}% match</p>

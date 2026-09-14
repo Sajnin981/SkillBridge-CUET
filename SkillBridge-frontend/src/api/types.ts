@@ -107,6 +107,7 @@ export interface BackendOpportunity {
   deadline: string;
   openings?: number;
   tags?: string[];
+  applicantsCount?: number;
   status: 'open' | 'closed';
   isActive: boolean;
   createdAt: string;

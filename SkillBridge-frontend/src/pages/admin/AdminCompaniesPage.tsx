@@ -9,6 +9,7 @@ import { companyService } from '@/services/companyService';
 import type { Company } from '@/lib/types';
 import { adminService } from '@/services/adminService';
 import { Button } from '@/components/ui/Button';
+import { Avatar } from '@/components/ui/Avatar';
 
 const statusTone: Record<string, 'success' | 'warning' | 'danger'> = { verified: 'success', pending: 'warning', rejected: 'danger' };
 
@@ -22,7 +23,8 @@ export default function AdminCompaniesPage() {
   useEffect(() => {
     setLoading(true);
     setError('');
-    companyService.getAll({ search: search || undefined, status: filter === 'All' ? undefined : filter.toLowerCase() })
+    const status = filter === 'All' ? undefined : filter === 'Verified' ? 'approved' : filter.toLowerCase();
+    companyService.getAll({ search: search || undefined, status })
       .then((c) => setCompanies(c))
       .catch(() => setError('Could not load companies.'))
       .finally(() => setLoading(false));
@@ -79,7 +81,7 @@ export default function AdminCompaniesPage() {
                 <tr key={c.id} className="transition hover:bg-ink-50">
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-3">
-                      <div className="flex h-9 w-9 items-center justify-center rounded-full bg-brand-100 text-sm font-semibold text-brand-700">{c.logo}</div>
+                      <Avatar name={c.name} src={c.logo} size="sm" />
                       <div><p className="text-sm font-semibold text-ink-800">{c.name}</p><p className="text-xs text-ink-400">{c.location}</p></div>
                     </div>
                   </td>

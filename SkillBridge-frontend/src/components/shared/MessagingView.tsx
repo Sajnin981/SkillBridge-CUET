@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { Send, Search, Phone, Video, MoreVertical, ArrowLeft, MessageSquare } from 'lucide-react';
 import { PageContainer } from '@/components/layout/DashboardLayout';
 import { Avatar } from '@/components/ui/Avatar';
@@ -9,6 +10,7 @@ interface Conversation {
   id: string;
   name: string;
   avatar: string;
+  participantPath?: string;
   role: string;
   last: string;
   time: string;
@@ -107,12 +109,12 @@ export function MessagingView({ title, emptyTitle, emptyDescription, conversatio
             {filteredConvs.map((c) => (
               <button key={c.id} onClick={() => { setActiveId(c.id); setMobileChat(true); }} className={cn('flex w-full items-center gap-3 border-b border-ink-50 p-3.5 text-left transition hover:bg-ink-50', activeId === c.id && 'bg-brand-50')}>
                 <div className="relative">
-                  <Avatar name={c.name} size="md" />
+                  {c.participantPath ? <Link to={c.participantPath} onClick={(event) => event.stopPropagation()}><Avatar name={c.name} src={c.avatar} size="md" /></Link> : <Avatar name={c.name} src={c.avatar} size="md" />}
                   {c.online && <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full bg-success-500 ring-2 ring-white" />}
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center justify-between">
-                    <p className="truncate text-sm font-semibold text-ink-800">{c.name}</p>
+                    {c.participantPath ? <Link to={c.participantPath} onClick={(event) => event.stopPropagation()} className="truncate text-sm font-semibold text-ink-800 hover:text-brand-700">{c.name}</Link> : <p className="truncate text-sm font-semibold text-ink-800">{c.name}</p>}
                     <span className="text-xs text-ink-400">{c.time}</span>
                   </div>
                   <p className="truncate text-xs text-ink-500">{c.last}</p>
@@ -130,11 +132,11 @@ export function MessagingView({ title, emptyTitle, emptyDescription, conversatio
               <div className="flex items-center gap-3 border-b border-ink-100 p-4">
                 <button onClick={() => setMobileChat(false)} className="rounded-lg p-1 text-ink-400 sm:hidden"><ArrowLeft className="h-5 w-5" /></button>
                 <div className="relative">
-                  <Avatar name={active.name} size="md" />
+                  {active.participantPath ? <Link to={active.participantPath}><Avatar name={active.name} src={active.avatar} size="md" /></Link> : <Avatar name={active.name} src={active.avatar} size="md" />}
                   {active.online && <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full bg-success-500 ring-2 ring-white" />}
                 </div>
                 <div className="flex-1">
-                  <p className="text-sm font-semibold text-ink-800">{active.name}</p>
+                  {active.participantPath ? <Link to={active.participantPath} className="text-sm font-semibold text-ink-800 hover:text-brand-700">{active.name}</Link> : <p className="text-sm font-semibold text-ink-800">{active.name}</p>}
                   <p className="text-xs text-ink-400">{active.online ? 'Online now' : 'Offline'} · {active.role}</p>
                 </div>
                 <button className="flex h-9 w-9 items-center justify-center rounded-lg text-ink-400 hover:bg-ink-100"><Phone className="h-4 w-4" /></button>

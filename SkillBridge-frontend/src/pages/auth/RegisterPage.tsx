@@ -160,10 +160,6 @@ export default function RegisterPage() {
                 {showPwd ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
               </button>
             </Field>
-            <label className="flex items-start gap-2 text-sm text-ink-600">
-              <input type="checkbox" required className="mt-0.5 h-4 w-4 rounded border-ink-300 text-brand-600 focus:ring-brand-500" />
-              I agree to the <a href="#" className="font-medium text-brand-600">Terms</a> and <a href="#" className="font-medium text-brand-600">Privacy Policy</a>
-            </label>
           </>
         )}
 

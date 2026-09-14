@@ -4,9 +4,14 @@ import type {
 } from './types';
 import type {
   StudentProfile, Company, Opportunity, Applicant, Notification, Skill,
-  OpportunityType, ApplicationStatus,
+  OpportunityType, ApplicationStatus, Role,
 } from '@/lib/types';
-import { colorFromString } from '@/lib/utils';
+
+function imagePath(value: string | undefined, folder: 'avatars' | 'company-logos'): string {
+  if (!value) return '';
+  if (value.startsWith('/') || value.startsWith('http://') || value.startsWith('https://')) return value;
+  return `/uploads/${folder}/${value}`;
+}
 
 const typeMap: Record<BackendOpportunityType, OpportunityType> = {
   internship: 'Internship',
@@ -22,7 +27,7 @@ export function mapStudent(s: BackendStudent): { id: string; name: string; email
     id: s._id,
     name: s.fullName,
     email: s.email,
-    avatar: s.avatarUrl || s.fullName.slice(0, 2).toUpperCase(),
+    avatar: imagePath(s.avatarUrl, 'avatars'),
     role: 'student',
     status: s.status,
   };
@@ -31,7 +36,7 @@ export function mapStudent(s: BackendStudent): { id: string; name: string; email
 export function mapStudentProfile(s: BackendStudent): StudentProfile {
   return {
     name: s.fullName,
-    avatar: s.avatarUrl || s.fullName.slice(0, 2).toUpperCase(),
+    avatar: imagePath(s.avatarUrl, 'avatars'),
     email: s.email,
     phone: s.phone,
     title: `${s.department} · Batch ${s.batch}`,
@@ -59,7 +64,7 @@ export function mapCompany(c: BackendCompany): Company {
   return {
     id: c._id,
     name: c.companyName,
-    logo: c.logoUrl || c.companyName.slice(0, 2).toUpperCase(),
+    logo: imagePath(c.logoUrl, 'company-logos'),
     industry: c.industry,
     location: c.address,
     website: c.website || '',
@@ -80,7 +85,7 @@ export function mapCompanyUser(c: BackendCompany): { id: string; name: string; e
     id: c._id,
     name: c.companyName,
     email: c.email,
-    avatar: c.logoUrl || c.companyName.slice(0, 2).toUpperCase(),
+    avatar: imagePath(c.logoUrl, 'company-logos'),
     role: 'company',
     status: c.status,
   };
@@ -114,7 +119,7 @@ export function mapOpportunity(o: BackendOpportunity): Opportunity {
     deadline: o.deadline,
     postedAt: o.createdAt,
     openings: o.openings || 1,
-    applicants: 0,
+    applicants: o.applicantsCount ?? 0,
     description: o.description,
     responsibilities: o.responsibilities || [],
     requirements: o.requirements || [],
@@ -140,7 +145,7 @@ export function mapApplicant(a: BackendApplication): Applicant {
     studentId: studentRef?._id || (typeof a.student === 'string' ? a.student : ''),
     opportunityId: oppRef?._id || (typeof a.opportunity === 'string' ? a.opportunity : ''),
     name: studentRef?.fullName || 'Applicant',
-    avatar: studentRef?.avatarUrl || (studentRef?.fullName || 'AP').slice(0, 2).toUpperCase(),
+    avatar: imagePath(studentRef?.avatarUrl, 'avatars'),
     email: studentRef?.email || '',
     department: studentRef?.department || '',
     batch: studentRef?.batch || '',
@@ -154,14 +159,18 @@ export function mapApplicant(a: BackendApplication): Applicant {
   };
 }
 
-export function mapConversation(c: BackendConversation) {
+export function mapConversation(c: BackendConversation, currentUserRole: Role) {
   const studentRef = typeof c.student === 'object' ? c.student : null;
   const companyRef = typeof c.company === 'object' ? c.company : null;
   const oppRef = c.opportunity && typeof c.opportunity === 'object' ? c.opportunity : null;
+  const participant = currentUserRole === 'student' ? companyRef : studentRef;
   return {
     id: c._id,
-    name: companyRef?.companyName || studentRef?.fullName || 'Unknown',
-    avatar: companyRef?.logoUrl || studentRef?.avatarUrl || colorFromString(c._id),
+    name: participant && 'companyName' in participant ? participant.companyName : participant?.fullName || 'Unknown',
+    avatar: participant && 'companyName' in participant
+      ? imagePath(participant.logoUrl, 'company-logos')
+      : imagePath(participant?.avatarUrl, 'avatars'),
+    participantPath: participant ? `/${currentUserRole === 'student' ? 'student/companies' : 'company/students'}/${participant._id}` : undefined,
     role: oppRef?.title || '',
     last: '',
     time: new Date(c.lastMessageAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),

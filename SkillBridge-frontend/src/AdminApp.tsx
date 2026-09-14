@@ -8,8 +8,6 @@ import AdminDashboard from '@/pages/admin/AdminDashboard';
 import AdminCompaniesPage from '@/pages/admin/AdminCompaniesPage';
 import AdminVerificationsPage from '@/pages/admin/AdminVerificationsPage';
 import AdminStudentsPage from '@/pages/admin/AdminStudentsPage';
-import AdminSettingsPage from '@/pages/admin/AdminSettingsPage';
-import AdminSearchPage from '@/pages/admin/AdminSearchPage';
 
 export default function AdminApp() {
   return (
@@ -23,8 +21,6 @@ export default function AdminApp() {
               <Route path="verifications" element={<AdminVerificationsPage />} />
               <Route path="companies" element={<AdminCompaniesPage />} />
               <Route path="students" element={<AdminStudentsPage />} />
-              <Route path="search" element={<AdminSearchPage />} />
-              <Route path="settings" element={<AdminSettingsPage />} />
             </Route>
             <Route path="*" element={<Navigate to="/admin" replace />} />
           </Routes>

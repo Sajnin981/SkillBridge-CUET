@@ -117,7 +117,7 @@ export function UserAvatarMenu({ name, avatar, role, onLogout }: UserMenuProps) 
   const base = `/${role}`;
   const links = [
     { label: 'My Profile', to: role === 'admin' ? '/admin' : `${base}/profile` },
-    { label: 'Settings', to: `${base}/settings` },
+    ...(role === 'admin' ? [] : [{ label: 'Settings', to: `${base}/settings` }]),
   ];
 
   return (

@@ -40,8 +40,6 @@ const adminNav: NavItem[] = [
   { to: '/admin/verifications', label: 'Verifications', icon: ShieldCheck },
   { to: '/admin/companies', label: 'Companies', icon: Building2 },
   { to: '/admin/students', label: 'Students', icon: Users },
-  { to: '/admin/search', label: 'Search', icon: Search },
-  { to: '/admin/settings', label: 'Settings', icon: Settings },
 ];
 
 const navByRole: Record<string, NavItem[]> = {

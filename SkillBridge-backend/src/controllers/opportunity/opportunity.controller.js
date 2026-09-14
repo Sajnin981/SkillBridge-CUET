@@ -1,5 +1,6 @@
 const mongoose = require("mongoose");
 const Opportunity = require("../../models/Opportunity");
+const Application = require("../../models/Application");
 const { OPPORTUNITY_TYPES } = require("../../models/Opportunity");
 const AppError = require("../../utils/AppError");
 const { success } = require("../../utils/apiResponse");
@@ -39,11 +40,22 @@ exports.listOpportunities = async (req, res, next) => {
         .limit(Number(limit)),
       Opportunity.countDocuments(filter),
     ]);
+    const applicantCounts = await Application.aggregate([
+      { $match: { opportunity: { $in: items.map((item) => item._id) } } },
+      { $group: { _id: "$opportunity", count: { $sum: 1 } } },
+    ]);
+    const countByOpportunity = applicantCounts.reduce((counts, item) => {
+      counts[item._id.toString()] = item.count;
+      return counts;
+    }, {});
 
     return success(res, {
       message: "Opportunities list",
       data: {
-        items,
+        items: items.map((item) => ({
+          ...item.toObject(),
+          applicantsCount: countByOpportunity[item._id.toString()] || 0,
+        })),
         pagination: {
           page: Number(page),
           limit: Number(limit),
@@ -72,7 +84,8 @@ exports.getOpportunity = async (req, res, next) => {
 
     if (!opportunity) return next(new AppError("Opportunity not found.", 404));
 
-    return success(res, { message: "Opportunity details", data: { opportunity } });
+    const applicantsCount = await Application.countDocuments({ opportunity: opportunity._id });
+    return success(res, { message: "Opportunity details", data: { opportunity: { ...opportunity.toObject(), applicantsCount } } });
   } catch (err) {
     next(err);
   }

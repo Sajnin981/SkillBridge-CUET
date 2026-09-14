@@ -58,12 +58,6 @@ export default function LoginPage() {
             {showPwd ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
           </button>
         </Field>
-        <div className="flex items-center justify-between">
-          <label className="flex items-center gap-2 text-sm text-ink-600">
-            <input type="checkbox" className="h-4 w-4 rounded border-ink-300 text-brand-600 focus:ring-brand-500" />Remember me
-          </label>
-          <Link to="/forgot-password" className="text-sm font-medium text-brand-600 hover:text-brand-700">Forgot password?</Link>
-        </div>
         <Button type="submit" className="w-full" size="lg" loading={loading}>Sign in</Button>
       </form>
       <p className="mt-6 text-center text-sm text-ink-500">

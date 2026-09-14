@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { ArrowLeft, MapPin, Briefcase, Users, CheckCircle2, Bookmark, Share2, ExternalLink, Calendar, DollarSign } from 'lucide-react';
+import { ArrowLeft, MapPin, Briefcase, Users, CheckCircle2, Bookmark, ExternalLink, Calendar, DollarSign } from 'lucide-react';
 import { PageContainer } from '@/components/layout/DashboardLayout';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
@@ -71,6 +71,9 @@ export default function OpportunityDetailsPage() {
     if (!id) return;
     setApplying(true);
     applicationService.apply(id, { coverLetter }, resumeFile).then(() => {
+      void opportunityService.getById(id).then((refreshedOpportunity) => {
+        if (refreshedOpportunity) setOpportunity(refreshedOpportunity);
+      }).catch(() => undefined);
       setApplied(true);
       setApplying(false);
       setApplyOpen(false);
@@ -169,11 +172,6 @@ export default function OpportunityDetailsPage() {
               </div>
             )}
 
-            {opportunity.tags.length > 0 && (
-              <div className="mt-6 flex flex-wrap gap-1.5">
-                {opportunity.tags.map((t) => <Badge key={t} tone="neutral">{t}</Badge>)}
-              </div>
-            )}
           </div>
         </div>
 
@@ -190,7 +188,6 @@ export default function OpportunityDetailsPage() {
               <Button variant="outline" className="w-full" onClick={toggleSave} disabled={togglingSave}>
                 <Bookmark className={`h-4 w-4 ${saved ? 'fill-brand-600 text-brand-600' : ''}`} />{saved ? 'Saved' : 'Save for later'}
               </Button>
-              <Button variant="ghost" className="w-full"><Share2 className="h-4 w-4" />Share</Button>
             </div>
             <div className="mt-4 rounded-xl bg-ink-50 p-3 text-xs text-ink-500">
               <p className="font-medium text-ink-600">{opportunity.openings} openings</p>
