@@ -190,3 +190,4 @@ node src/scripts/seedAdmin.js "Admin Name" admin@yourdomain.com YourStrongPass1
 ```
 
 You can then log in via `POST /api/auth/login` with `role: "admin"` and use the admin endpoints to approve students and companies.
+## Why MongoDB Was Chosen
