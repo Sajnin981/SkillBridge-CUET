@@ -11,7 +11,7 @@ export const messageService = {
     return res.data.data.items.map((conversation) => mapConversation(conversation, role));
   },
 
-  async startConversation(data: { companyId?: string; studentId?: string; opportunityId?: string }) {
+  async startConversation(data: { adminId?: string; companyId?: string; studentId?: string; opportunityId?: string }) {
     const res = await api.post<ApiEnvelope<{ conversation: BackendConversation }>>('/messages/conversations', data);
     return res.data.data.conversation;
   },

@@ -33,9 +33,11 @@ interface MessagingViewProps {
   messagesByConv: Record<string, Message[]>;
   onSendMessage?: (conversationId: string, text: string) => Promise<void>;
   initialConversationId?: string | null;
+  headerAction?: React.ReactNode;
+  topContent?: React.ReactNode;
 }
 
-export function MessagingView({ title, emptyTitle, emptyDescription, conversations, messagesByConv, onSendMessage, initialConversationId }: MessagingViewProps) {
+export function MessagingView({ title, emptyTitle, emptyDescription, conversations, messagesByConv, onSendMessage, initialConversationId, headerAction, topContent }: MessagingViewProps) {
   const [activeId, setActiveId] = useState<string | null>(initialConversationId && conversations.some((c) => c.id === initialConversationId) ? initialConversationId : conversations[0]?.id ?? null);
   const [messages, setMessages] = useState<Message[]>(activeId ? messagesByConv[activeId] ?? [] : []);
   const [input, setInput] = useState('');
@@ -85,7 +87,8 @@ export function MessagingView({ title, emptyTitle, emptyDescription, conversatio
   if (conversations.length === 0) {
     return (
       <PageContainer>
-        <h2 className="mb-6 font-display text-2xl font-bold text-ink-800">{title}</h2>
+        {topContent}
+        <div className="mb-6 flex items-center justify-between gap-3"><h2 className="font-display text-2xl font-bold text-ink-800">{title}</h2>{headerAction}</div>
         <div className="card">
           <EmptyState icon={<MessageSquare className="h-7 w-7" />} title={emptyTitle} description={emptyDescription} />
         </div>
@@ -95,7 +98,8 @@ export function MessagingView({ title, emptyTitle, emptyDescription, conversatio
 
   return (
     <PageContainer>
-      <h2 className="mb-6 font-display text-2xl font-bold text-ink-800">{title}</h2>
+      {topContent}
+      <div className="mb-6 flex items-center justify-between gap-3"><h2 className="font-display text-2xl font-bold text-ink-800">{title}</h2>{headerAction}</div>
       <div className="card flex h-[600px] overflow-hidden p-0">
         {/* Conversation list */}
         <div className={cn('w-full border-r border-ink-100 sm:w-80', mobileChat && 'hidden')}>

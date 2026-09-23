@@ -11,7 +11,7 @@ const messageSchema = new Schema(
       index: true,
     },
     sender: { type: Schema.Types.ObjectId, required: true, refPath: "senderModel" },
-    senderModel: { type: String, required: true, enum: ["Student", "Company"] },
+    senderModel: { type: String, required: true, enum: ["Student", "Company", "Admin"] },
     content: { type: String, required: true, trim: true, maxlength: 5000 },
     read: { type: Boolean, default: false },
     readAt: { type: Date, default: null },

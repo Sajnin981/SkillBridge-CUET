@@ -40,6 +40,7 @@ export interface Opportunity {
   requirements: string[];
   skills: string[];
   tags: string[];
+  applicationEligibility: 'everyone' | 'required_skills';
   saved?: boolean;
   applied?: boolean;
 }

@@ -1,14 +1,18 @@
 import { useEffect, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { MessagingView } from '@/components/shared/MessagingView';
 import { SkeletonCard } from '@/components/ui/Skeleton';
 import { useAuth } from '@/context/AuthContext';
 import { messageService } from '@/services/messageService';
+import { Button } from '@/components/ui/Button';
+import { useToast } from '@/components/ui/Toast';
+import { normalizeError } from '@/api/axios';
 
 interface Conversation {
   id: string;
   name: string;
   avatar: string;
+  participantPath?: string;
   role: string;
   last: string;
   time: string;
@@ -25,6 +29,8 @@ interface Message {
 
 export default function StudentMessagingPage() {
   const { user } = useAuth();
+  const navigate = useNavigate();
+  const { toast } = useToast();
   const [searchParams] = useSearchParams();
   const conversationId = searchParams.get('conversationId');
   const [conversations, setConversations] = useState<Conversation[]>([]);
@@ -49,6 +55,22 @@ export default function StudentMessagingPage() {
     await messageService.sendMessage(conversationId, text);
   };
 
+  const contactAdmin = async () => {
+    try {
+      const conversation = await messageService.startConversation({});
+      const updatedConversations = await messageService.getConversations(user!.role);
+      const updatedMessages = await Promise.all(updatedConversations.map(async (item) => [
+        item.id,
+        await messageService.getMessages(item.id, user!.role, user!.id),
+      ] as const));
+      setConversations(updatedConversations as Conversation[]);
+      setMessagesByConv(Object.fromEntries(updatedMessages) as Record<string, Message[]>);
+      navigate(`/student/messages?conversationId=${conversation._id}`);
+    } catch (err) {
+      toast({ title: 'Could not contact admin', description: normalizeError(err).message, variant: 'error' });
+    }
+  };
+
   if (loading) return <SkeletonCard />;
 
   return (
@@ -60,6 +82,7 @@ export default function StudentMessagingPage() {
       messagesByConv={messagesByConv}
       onSendMessage={handleSendMessage}
       initialConversationId={conversationId}
+      headerAction={<Button size="sm" variant="outline" onClick={contactAdmin}>Contact admin</Button>}
     />
   );
 }

@@ -50,6 +50,7 @@ export const opportunityService = {
         requirements: [],
         skills: [],
         tags: [],
+        applicationEligibility: 'everyone',
         saved: false,
         applied: true,
       };

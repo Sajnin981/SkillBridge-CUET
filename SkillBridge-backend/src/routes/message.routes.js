@@ -4,7 +4,7 @@ const controller = require("../controllers/message/message.controller");
 
 const router = express.Router();
 
-router.use(protect, restrict("student", "company"), requireApproved);
+router.use(protect, restrict("student", "company", "admin"), requireApproved);
 
 router.get("/conversations", controller.listConversations);
 router.post("/conversations", controller.startConversation);

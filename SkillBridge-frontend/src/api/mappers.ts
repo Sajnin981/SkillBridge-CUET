@@ -125,6 +125,7 @@ export function mapOpportunity(o: BackendOpportunity): Opportunity {
     requirements: o.requirements || [],
     skills: o.tags || [],
     tags: o.tags || [],
+    applicationEligibility: o.applicationEligibility || 'everyone',
     saved: false,
     applied: false,
   };
@@ -162,16 +163,61 @@ export function mapApplicant(a: BackendApplication): Applicant {
 export function mapConversation(c: BackendConversation, currentUserRole: Role) {
   const studentRef = typeof c.student === 'object' ? c.student : null;
   const companyRef = typeof c.company === 'object' ? c.company : null;
+  const adminRef = c.admin && typeof c.admin === 'object' ? c.admin : null;
   const oppRef = c.opportunity && typeof c.opportunity === 'object' ? c.opportunity : null;
-  const participant = currentUserRole === 'student' ? companyRef : studentRef;
+
+  // Pick the OTHER participant (i.e. not the current user).
+  const participant =
+    currentUserRole === 'admin'
+      ? studentRef || companyRef
+      : currentUserRole === 'student'
+        ? adminRef || companyRef
+        : adminRef || studentRef;
+
+  const isAdmin = participant && 'name' in participant && !('fullName' in participant) && !('companyName' in participant);
+  const isCompany = participant && 'companyName' in participant;
+
+  const participantName = isCompany
+    ? (participant as { companyName: string }).companyName
+    : isAdmin
+      ? (participant as { name: string }).name
+      : (participant as { fullName: string } | null)?.fullName || 'Unknown';
+
+  const participantAvatar = participant && 'avatarUrl' in participant
+    ? (participant as { avatarUrl?: string }).avatarUrl
+    : undefined;
+
+  // Role label: opportunity title for student↔company, otherwise role name.
+  const roleLabel = oppRef?.title
+    ? oppRef.title
+    : isAdmin
+      ? 'Admin'
+      : isCompany
+        ? 'Company'
+        : 'Student';
+
+  // Profile link — only for student↔company paths, not for admin participants.
+  const participantPath: string | undefined = (() => {
+    if (!participant || isAdmin) return undefined;
+    if (currentUserRole === 'student' && isCompany)
+      return `/student/companies/${(participant as { _id: string })._id}`;
+    if (currentUserRole === 'company' && !isCompany)
+      return `/company/students/${(participant as { _id: string })._id}`;
+    if (currentUserRole === 'admin')
+      return isCompany
+        ? `/admin/companies/${(participant as { _id: string })._id}`
+        : `/admin/students/${(participant as { _id: string })._id}`;
+    return undefined;
+  })();
+
   return {
     id: c._id,
-    name: participant && 'companyName' in participant ? participant.companyName : participant?.fullName || 'Unknown',
-    avatar: participant && 'companyName' in participant
-      ? imagePath(participant.logoUrl, 'company-logos')
-      : imagePath(participant?.avatarUrl, 'avatars'),
-    participantPath: participant ? `/${currentUserRole === 'student' ? 'student/companies' : 'company/students'}/${participant._id}` : undefined,
-    role: oppRef?.title || '',
+    name: participantName,
+    avatar: isCompany
+      ? imagePath((participant as { logoUrl?: string }).logoUrl, 'company-logos')
+      : imagePath(participantAvatar, 'avatars'),
+    participantPath,
+    role: roleLabel,
     last: '',
     time: new Date(c.lastMessageAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
     unread: 0,
@@ -180,15 +226,19 @@ export function mapConversation(c: BackendConversation, currentUserRole: Role) {
 }
 
 export function mapMessage(m: BackendMessage, currentUserRole?: string, currentUserId?: string) {
-  let isMe = false;
-  if (currentUserId && m.sender === currentUserId) {
-    isMe = true;
+  // Always prefer the concrete sender ID match when available.
+  // Fall back to senderModel only when currentUserId is unavailable.
+  let isMe: boolean;
+  if (currentUserId) {
+    isMe = m.sender === currentUserId;
   } else if (currentUserRole === 'student') {
     isMe = m.senderModel === 'Student';
   } else if (currentUserRole === 'company') {
     isMe = m.senderModel === 'Company';
+  } else if (currentUserRole === 'admin') {
+    isMe = m.senderModel === 'Admin';
   } else {
-    isMe = m.senderModel === 'Student';
+    isMe = false;
   }
 
   return {

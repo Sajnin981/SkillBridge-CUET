@@ -30,6 +30,11 @@ const opportunitySchema = new Schema(
     deadline: { type: Date, required: true },
     openings: { type: Number, default: 1, min: 1 },
     tags: [{ type: String, trim: true }],
+    applicationEligibility: {
+      type: String,
+      enum: ["everyone", "required_skills"],
+      default: "everyone",
+    },
     status: {
       type: String,
       enum: ["open", "closed"],

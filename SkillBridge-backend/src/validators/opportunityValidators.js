@@ -15,6 +15,7 @@ const create = [
   body("tags").optional().isArray(),
   body("requirements").optional().isArray(),
   body("responsibilities").optional().isArray(),
+  body("applicationEligibility").optional().isIn(["everyone", "required_skills"]),
 ];
 
 const update = [
@@ -24,6 +25,7 @@ const update = [
   body("deadline").optional().isISO8601(),
   body("openings").optional().isInt({ min: 1 }),
   body("status").optional().isIn(["open", "closed"]),
+  body("applicationEligibility").optional().isIn(["everyone", "required_skills"]),
 ];
 
 module.exports = { create, update };

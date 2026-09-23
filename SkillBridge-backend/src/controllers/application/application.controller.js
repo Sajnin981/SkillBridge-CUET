@@ -27,6 +27,13 @@ exports.apply = async (req, res, next) => {
     if (new Date(opportunity.deadline) < new Date()) {
       return next(new AppError("The deadline for this opportunity has passed.", 400));
     }
+    const requiredSkills = (opportunity.tags || []).map((skill) => skill.trim().toLowerCase()).filter(Boolean);
+    if (opportunity.applicationEligibility === "required_skills" && requiredSkills.length > 0) {
+      const studentSkills = new Set((student.skills || []).map((skill) => skill.trim().toLowerCase()).filter(Boolean));
+      if (!requiredSkills.every((skill) => studentSkills.has(skill))) {
+        return next(new AppError("You do not have the required skills for this opportunity.", 403));
+      }
+    }
 
     const existing = await Application.findOne({ opportunity: opportunity._id, student: student._id });
     if (existing) {
