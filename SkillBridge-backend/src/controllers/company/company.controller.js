@@ -153,6 +153,7 @@ exports.createOpportunity = async (req, res, next) => {
     const {
       title, type, description, requirements, responsibilities,
       location, isRemote, salary, deadline, openings, tags,
+      applicationEligibility,
     } = req.body;
 
     const opportunity = await Opportunity.create({
@@ -168,6 +169,7 @@ exports.createOpportunity = async (req, res, next) => {
       deadline,
       openings: openings || 1,
       tags: tags || [],
+      applicationEligibility: applicationEligibility || "everyone",
     });
 
     return success(res, {
@@ -269,6 +271,7 @@ exports.updateOpportunity = async (req, res, next) => {
     const allowed = [
       "title", "type", "description", "requirements", "responsibilities",
       "location", "isRemote", "salary", "deadline", "openings", "tags", "status",
+      "applicationEligibility",
     ];
     allowed.forEach((f) => {
       if (req.body[f] !== undefined) opportunity[f] = req.body[f];

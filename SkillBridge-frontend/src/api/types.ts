@@ -107,6 +107,7 @@ export interface BackendOpportunity {
   deadline: string;
   openings?: number;
   tags?: string[];
+  applicationEligibility?: 'everyone' | 'required_skills';
   applicantsCount?: number;
   status: 'open' | 'closed';
   isActive: boolean;
@@ -141,6 +142,7 @@ export interface BackendConversation {
   _id: string;
   student: string | { _id: string; fullName: string; avatarUrl?: string };
   company: string | { _id: string; companyName: string; logoUrl?: string };
+  admin?: string | { _id: string; name: string; email?: string };
   opportunity?: string | { _id: string; title: string; type: string } | null;
   lastMessageAt: string;
   createdAt: string;
@@ -151,7 +153,7 @@ export interface BackendMessage {
   _id: string;
   conversation: string;
   sender: string;
-  senderModel: 'Student' | 'Company';
+  senderModel: 'Student' | 'Company' | 'Admin';
   content: string;
   read: boolean;
   readAt: string | null;

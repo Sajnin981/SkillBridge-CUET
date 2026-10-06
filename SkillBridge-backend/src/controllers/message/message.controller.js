@@ -2,26 +2,31 @@ const mongoose = require("mongoose");
 const Conversation = require("../../models/Conversation");
 const Message = require("../../models/Message");
 const Opportunity = require("../../models/Opportunity");
+const Admin = require("../../models/Admin");
 const AppError = require("../../utils/AppError");
 const { success } = require("../../utils/apiResponse");
 const createNotification = require("../../utils/createNotification");
 
 const isStudent = (req) => req.userRole === "student";
 const isCompany = (req) => req.userRole === "company";
+const isAdmin = (req) => req.userRole === "admin";
 
 /**
  * GET /api/messages/conversations
- * Returns the conversations for the current user (student or company).
+ * Returns only conversations involving the current user.
  */
 exports.listConversations = async (req, res, next) => {
   try {
     const filter = isStudent(req)
       ? { student: req.user._id }
-      : { company: req.user._id };
+      : isCompany(req)
+        ? { company: req.user._id }
+        : { admin: req.user._id };
 
     const items = await Conversation.find(filter)
       .populate("student", "fullName avatarUrl")
       .populate("company", "companyName logoUrl")
+      .populate("admin", "name email")
       .populate("opportunity", "title type")
       .sort("-lastMessageAt");
 
@@ -33,13 +38,35 @@ exports.listConversations = async (req, res, next) => {
 
 /**
  * POST /api/messages/conversations
- * Body: { companyId, opportunityId? }  (student initiating)
- *    or { studentId, opportunityId? }  (company initiating)
+ * Body: { companyId, opportunityId? } (student initiating)
+ *    or { studentId, opportunityId? } (company initiating)
+ *    or { adminId } (student/company initiating)
+ *    or { studentId } / { companyId } (admin initiating)
  */
 exports.startConversation = async (req, res, next) => {
   try {
+    const adminId = isAdmin(req) ? req.user._id : req.body.adminId;
     const studentId = isStudent(req) ? req.user._id : req.body.studentId;
     const companyId = isCompany(req) ? req.user._id : req.body.companyId;
+    const wantsAdminConversation = isAdmin(req) || Boolean(req.body.adminId) || (!req.body.studentId && !req.body.companyId);
+
+    const targetAdminId = wantsAdminConversation && !isAdmin(req) && !adminId
+      ? (await Admin.findOne().select("_id"))?._id
+      : adminId;
+
+    if (targetAdminId && (studentId || companyId)) {
+      if (studentId && companyId) return next(new AppError("Choose a student or company.", 422));
+      if (!mongoose.isValidObjectId(targetAdminId) || !mongoose.isValidObjectId(studentId || companyId)) {
+        return next(new AppError("Invalid participant ID.", 400));
+      }
+      const filter = studentId ? { admin: targetAdminId, student: studentId } : { admin: targetAdminId, company: companyId };
+      const conversation = await Conversation.findOneAndUpdate(
+        filter,
+        { $setOnInsert: { ...filter, opportunity: null } },
+        { upsert: true, new: true }
+      );
+      return success(res, { message: "Conversation ready", data: { conversation } });
+    }
 
     if (!studentId || !companyId) {
       return next(new AppError("Both student and company are required.", 422));
@@ -83,8 +110,9 @@ exports.listMessages = async (req, res, next) => {
 
     // Authorization: only the two participants can read the thread.
     const isParticipant =
-      (isStudent(req) && conversation.student.equals(req.user._id)) ||
-      (isCompany(req) && conversation.company.equals(req.user._id));
+      (isStudent(req) && conversation.student?.equals(req.user._id)) ||
+      (isCompany(req) && conversation.company?.equals(req.user._id)) ||
+      (isAdmin(req) && conversation.admin?.equals(req.user._id));
     if (!isParticipant) return next(new AppError("Not authorized for this conversation.", 403));
 
     const { page = 1, limit = 50 } = req.query;
@@ -133,28 +161,33 @@ exports.sendMessage = async (req, res, next) => {
     if (!conversation) return next(new AppError("Conversation not found.", 404));
 
     const isParticipant =
-      (isStudent(req) && conversation.student.equals(req.user._id)) ||
-      (isCompany(req) && conversation.company.equals(req.user._id));
+      (isStudent(req) && conversation.student?.equals(req.user._id)) ||
+      (isCompany(req) && conversation.company?.equals(req.user._id)) ||
+      (isAdmin(req) && conversation.admin?.equals(req.user._id));
     if (!isParticipant) return next(new AppError("Not authorized for this conversation.", 403));
 
     const message = await Message.create({
       conversation: conversation._id,
       sender: req.user._id,
-      senderModel: isStudent(req) ? "Student" : "Company",
+      senderModel: isStudent(req) ? "Student" : isCompany(req) ? "Company" : "Admin",
       content: content.trim(),
     });
 
     conversation.lastMessageAt = new Date();
     await conversation.save();
-    const recipientModel = isStudent(req) ? "Company" : "Student";
-    const recipient = isStudent(req) ? conversation.company : conversation.student;
+    const recipientModel = isAdmin(req) ? (conversation.student ? "Student" : "Company") : "Admin";
+    const recipient = isAdmin(req) ? (conversation.student || conversation.company) : conversation.admin;
+    if (!recipient) {
+      return next(new AppError("Conversation recipient not found.", 500));
+    }
+    const senderName = req.user.fullName || req.user.companyName || req.user.name || "Someone";
     await createNotification({
       recipient,
       recipientModel,
       title: "New message",
-      body: `${req.user.fullName || req.user.companyName} sent you a message.`,
+      body: `${senderName} sent you a message.`,
       type: "message",
-      link: `/${recipientModel === "Student" ? "student" : "company"}/messages?conversationId=${conversation._id}`,
+      link: `/${recipientModel === "Student" ? "student" : recipientModel === "Company" ? "company" : "admin"}/messages?conversationId=${conversation._id}`,
     });
 
     return success(res, {
@@ -178,6 +211,12 @@ exports.markRead = async (req, res, next) => {
     }
     const conversation = await Conversation.findById(req.params.id);
     if (!conversation) return next(new AppError("Conversation not found.", 404));
+
+    const isParticipant =
+      (isStudent(req) && conversation.student?.equals(req.user._id)) ||
+      (isCompany(req) && conversation.company?.equals(req.user._id)) ||
+      (isAdmin(req) && conversation.admin?.equals(req.user._id));
+    if (!isParticipant) return next(new AppError("Not authorized for this conversation.", 403));
 
     await Message.updateMany(
       {

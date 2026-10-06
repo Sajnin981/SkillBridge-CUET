@@ -32,6 +32,7 @@ export default function OpportunityDetailsPage() {
   const [coverLetter, setCoverLetter] = useState('');
   const [resumeFile, setResumeFile] = useState<File | undefined>();
   const [profileResumeUrl, setProfileResumeUrl] = useState('');
+  const [studentSkills, setStudentSkills] = useState<string[]>([]);
   const [opportunity, setOpportunity] = useState<Opportunity | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -48,7 +49,10 @@ export default function OpportunityDetailsPage() {
           return item._id === id || item.id === id;
         }));
       }).catch(() => {});
-      studentService.getRawProfile().then((profile) => setProfileResumeUrl(profile?.resumeUrl || '')).catch(() => {});
+      studentService.getRawProfile().then((profile) => {
+        setProfileResumeUrl(profile?.resumeUrl || '');
+        setStudentSkills(profile?.skills || []);
+      }).catch(() => {});
       applicationService.getApplications().then((apps) => {
         setApplied(apps.some((a) => a.opportunityId === id));
       }).catch(() => {});
@@ -66,6 +70,9 @@ export default function OpportunityDetailsPage() {
   }
 
   const tone = typeTones[opportunity.type] ?? 'neutral';
+  const normalizedStudentSkills = new Set(studentSkills.map((skill) => skill.trim().toLowerCase()));
+  const requiredSkillsOnly = opportunity.applicationEligibility === 'required_skills' && opportunity.skills.length > 0;
+  const eligibleBySkills = !requiredSkillsOnly || opportunity.skills.every((skill) => normalizedStudentSkills.has(skill.trim().toLowerCase()));
 
   const submitApplication = () => {
     if (!id) return;
@@ -172,6 +179,11 @@ export default function OpportunityDetailsPage() {
               </div>
             )}
 
+            <div className="mt-6 border-t border-ink-100 pt-6">
+              <h3 className="text-base font-semibold text-ink-800">Application Eligibility</h3>
+              <p className="mt-2 text-sm text-ink-600">{requiredSkillsOnly ? 'Required skills only' : 'Open for everyone'}</p>
+            </div>
+
           </div>
         </div>
 
@@ -182,6 +194,8 @@ export default function OpportunityDetailsPage() {
             <div className="mt-4 space-y-2">
               {applied ? (
                 <Button className="w-full" variant="success" disabled><CheckCircle2 className="h-4 w-4" />Application submitted</Button>
+              ) : !eligibleBySkills ? (
+                <Button className="w-full" disabled>You do not meet the required skills</Button>
               ) : (
                 <Button className="w-full" onClick={() => setApplyOpen(true)}>Apply Now</Button>
               )}
@@ -193,6 +207,7 @@ export default function OpportunityDetailsPage() {
               <p className="font-medium text-ink-600">{opportunity.openings} openings</p>
               <p className="mt-1">{opportunity.applicants} applicants so far</p>
             </div>
+            {!eligibleBySkills && <p className="mt-3 text-xs text-danger-600">You do not meet the required skills for this opportunity.</p>}
           </div>
 
           <div className="card p-5">

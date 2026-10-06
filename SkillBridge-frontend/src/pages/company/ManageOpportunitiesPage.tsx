@@ -68,6 +68,7 @@ export default function ManageOpportunitiesPage() {
                   <div>
                     <p className="text-base font-semibold text-ink-800">{o.title}</p>
                     <p className="text-sm text-ink-500">{o.type} · {o.location}</p>
+                    <p className="mt-1 text-xs text-ink-400">Application eligibility: {o.applicationEligibility === 'required_skills' ? 'Required skills only' : 'Open for everyone'}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-4">

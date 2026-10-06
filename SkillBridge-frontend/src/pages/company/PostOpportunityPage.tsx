@@ -38,6 +38,7 @@ export default function PostOpportunityPage() {
   const [openings, setOpenings] = useState(1);
   const [deadline, setDeadline] = useState(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]);
   const [tagsInput, setTagsInput] = useState('Frontend, Full-time');
+  const [applicationEligibility, setApplicationEligibility] = useState<'everyone' | 'required_skills'>('everyone');
 
   const addSkill = () => {
     if (skillInput.trim() && !skills.includes(skillInput.trim())) {
@@ -81,6 +82,7 @@ export default function PostOpportunityPage() {
         salary: salary.trim(),
         openings: Number(openings) || 1,
         deadline,
+        applicationEligibility,
       });
 
       toast({ title: 'Opportunity posted!', description: 'It is now live for students to apply.', variant: 'success' });
@@ -216,6 +218,21 @@ export default function PostOpportunityPage() {
           <Card>
             <CardHeader title="Tags" subtitle="Add perks or highlights (comma separated)" />
             <Input value={tagsInput} onChange={(e) => setTagsInput(e.target.value)} placeholder="e.g. Remote, Mentorship, Full-time" />
+          </Card>
+
+          <Card>
+            <CardHeader title="Application Eligibility" />
+            <div className="space-y-3 text-sm text-ink-600">
+              <label className="flex items-start gap-2">
+                <input type="radio" name="applicationEligibility" value="everyone" checked={applicationEligibility === 'everyone'} onChange={() => setApplicationEligibility('everyone')} className="mt-0.5" />
+                <span>Open for everyone to apply</span>
+              </label>
+              <label className="flex items-start gap-2">
+                <input type="radio" name="applicationEligibility" value="required_skills" checked={applicationEligibility === 'required_skills'} onChange={() => setApplicationEligibility('required_skills')} className="mt-0.5" />
+                <span>Only people with the required skills can apply<span className="mt-1 block text-xs text-ink-400">Only students who have the required skills listed for this opportunity will be allowed to apply.</span></span>
+              </label>
+              {applicationEligibility === 'required_skills' && skills.length === 0 && <p className="text-xs text-warning-600">Add at least one required skill, or everyone will be allowed to apply.</p>}
+            </div>
           </Card>
 
           <div className="flex gap-3">
