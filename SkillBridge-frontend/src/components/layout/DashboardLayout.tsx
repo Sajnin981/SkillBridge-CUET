@@ -20,7 +20,6 @@ const studentNav: NavItem[] = [
   { to: '/student/messages', label: 'Messages', icon: MessageSquare },
   { to: '/student/notifications', label: 'Notifications', icon: Bell },
   { to: '/student/profile', label: 'Profile', icon: User },
-  { to: '/student/resume', label: 'AI Resume', icon: FileUp },
   { to: '/student/settings', label: 'Settings', icon: Settings },
 ];
 

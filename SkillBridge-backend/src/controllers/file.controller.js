@@ -1,5 +1,5 @@
 const path = require("path");
-const fs = require("fs");
+const fileStore = require("../utils/fileStore");
 const Application = require("../models/Application");
 const AppError = require("../utils/AppError");
 
@@ -24,9 +24,9 @@ module.exports = async (req, res, next) => {
     }
     if (!allowed) return next(new AppError("You do not have permission to access this file.", 403));
 
-    const filePath = path.join(__dirname, "..", "uploads", folder, filename);
-    if (!fs.existsSync(filePath)) return next(new AppError("File not found.", 404));
-    return res.sendFile(filePath);
+    const found = await fileStore.send(res, folder, filename);
+    if (!found) return next(new AppError("File not found.", 404));
+    return undefined;
   } catch (err) {
     next(err);
   }

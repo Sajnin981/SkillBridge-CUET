@@ -1,9 +1,6 @@
-const path = require("path");
-const fs = require("fs");
 const multer = require("multer");
 const AppError = require("../utils/AppError");
-
-const UPLOAD_ROOT = path.join(__dirname, "..", "uploads");
+const fileStore = require("../utils/fileStore");
 
 // Map each form field name to its destination folder + allowed MIME types.
 const FIELD_MAP = {
@@ -15,20 +12,9 @@ const FIELD_MAP = {
   postImage: { folder: "post-images", types: ["image/jpeg", "image/png", "image/webp"] },
 };
 
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    const cfg = FIELD_MAP[file.fieldname];
-    if (!cfg) return cb(new AppError(`Unknown upload field: ${file.fieldname}`, 400));
-    const dir = path.join(UPLOAD_ROOT, cfg.folder);
-    fs.mkdirSync(dir, { recursive: true });
-    cb(null, dir);
-  },
-  filename: (req, file, cb) => {
-    const ext = path.extname(file.originalname).toLowerCase();
-    const base = file.fieldname.replace(/\s+/g, "_");
-    cb(null, `${base}-${Date.now()}-${Math.round(Math.random() * 1e9)}${ext}`);
-  },
-});
+// Files are kept in memory and then persisted to MongoDB (see utils/fileStore.js),
+// because serverless platforms have no writable persistent disk.
+const storage = multer.memoryStorage();
 
 const maxBytes = (Number(process.env.MAX_FILE_SIZE_MB) || 5) * 1024 * 1024;
 
@@ -41,6 +27,33 @@ const fileFilter = (req, file, cb) => {
   cb(null, true);
 };
 
-const upload = multer({ storage, fileFilter, limits: { fileSize: maxBytes } });
+const multerInstance = multer({ storage, fileFilter, limits: { fileSize: maxBytes } });
+
+// Persist every uploaded file and expose `file.filename` / `file.folder` exactly
+// as multer's disk storage used to, so controllers keep building the same URLs.
+const persistFiles = async (req, _res, next) => {
+  try {
+    const files = [];
+    if (req.file) files.push(req.file);
+    if (Array.isArray(req.files)) files.push(...req.files);
+    else if (req.files) Object.values(req.files).forEach((list) => files.push(...list));
+
+    for (const file of files) {
+      const cfg = FIELD_MAP[file.fieldname];
+      file.filename = fileStore.buildFilename(file.fieldname, file.originalname);
+      file.folder = cfg.folder;
+      await fileStore.save(cfg.folder, file.filename, file.buffer, file.mimetype);
+      file.buffer = undefined;
+    }
+    next();
+  } catch (err) {
+    next(err);
+  }
+};
+
+const upload = {
+  single: (name) => [multerInstance.single(name), persistFiles],
+  fields: (fields) => [multerInstance.fields(fields), persistFiles],
+};
 
 module.exports = { upload, FIELD_MAP };

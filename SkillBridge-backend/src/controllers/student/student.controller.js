@@ -1,12 +1,10 @@
 const mongoose = require("mongoose");
-const fs = require("fs");
-const path = require("path");
 const Student = require("../../models/Student");
 const Opportunity = require("../../models/Opportunity");
 const AppError = require("../../utils/AppError");
+const fileStore = require("../../utils/fileStore");
 const { success } = require("../../utils/apiResponse");
 
-const UPLOAD_ROOT = path.join(__dirname, "..", "..", "uploads");
 
 function isValidUrl(value) {
   try {
@@ -18,11 +16,7 @@ function isValidUrl(value) {
 }
 
 function removeUploadedFile(fileUrl) {
-  if (!fileUrl || !fileUrl.startsWith("/uploads/")) return;
-  const relative = fileUrl.replace("/uploads/", "");
-  const absolute = path.join(UPLOAD_ROOT, relative);
-  if (!absolute.startsWith(UPLOAD_ROOT)) return;
-  if (fs.existsSync(absolute)) fs.unlinkSync(absolute);
+  fileStore.removeByUrl(fileUrl).catch((err) => console.error("Failed to remove uploaded file:", err.message));
 }
 
 /**

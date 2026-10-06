@@ -3,12 +3,15 @@ const cors = require("cors");
 const helmet = require("helmet");
 const morgan = require("morgan");
 const cookieParser = require("cookie-parser");
-const path = require("path");
+const fileStore = require("./utils/fileStore");
 
 const { apiLimiter } = require("./middlewares/rateLimiter");
 const { errorHandler, notFound } = require("./middlewares/error");
 
 const app = express();
+
+// Behind Vercel's proxy: needed for correct client IPs (rate limiting) and secure requests.
+app.set("trust proxy", 1);
 
 // --- Security & utility middleware ---
 app.use(helmet({
@@ -17,8 +20,9 @@ app.use(helmet({
 app.use(
   cors({
     origin: (origin, callback) => {
-      const configuredOrigin = process.env.CLIENT_URL;
-      const allowedOrigins = configuredOrigin ? [configuredOrigin] : [];
+      // CLIENT_URL may hold several comma-separated origins; trailing slashes are ignored.
+      const normalize = (value) => value.trim().replace(/\/+$/, "");
+      const allowedOrigins = (process.env.CLIENT_URL || "").split(",").filter(Boolean).map(normalize);
       if (
         !origin ||
         allowedOrigins.includes(origin) ||
@@ -47,10 +51,18 @@ if (process.env.NODE_ENV !== "test") {
 app.use(apiLimiter);
 
 // Publicly safe assets. Sensitive documents remain behind /api/files authorization.
-const uploadsRoot = path.join(__dirname, "uploads");
-app.use("/uploads/company-logos", express.static(path.join(uploadsRoot, "company-logos")));
-app.use("/uploads/avatars", express.static(path.join(uploadsRoot, "avatars")));
-app.use("/uploads/post-images", express.static(path.join(uploadsRoot, "post-images")));
+const PUBLIC_UPLOAD_FOLDERS = ["company-logos", "avatars", "post-images"];
+app.get("/uploads/:folder/:filename", async (req, res, next) => {
+  try {
+    const { folder, filename } = req.params;
+    if (!PUBLIC_UPLOAD_FOLDERS.includes(folder)) return next();
+    res.set("Cache-Control", "public, max-age=86400");
+    const found = await fileStore.send(res, folder, filename);
+    return found ? undefined : next();
+  } catch (err) {
+    return next(err);
+  }
+});
 
 // Uploads are served through an authenticated controller, not as public files.
 app.use("/api/files", require("./routes/file.routes"));

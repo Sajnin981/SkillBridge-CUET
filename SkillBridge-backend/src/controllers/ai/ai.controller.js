@@ -3,8 +3,7 @@ const Opportunity = require("../../models/Opportunity");
 const Application = require("../../models/Application");
 const AppError = require("../../utils/AppError");
 const { success } = require("../../utils/apiResponse");
-const fs = require("fs");
-const path = require("path");
+const fileStore = require("../../utils/fileStore");
 const PDFDocument = require("pdfkit");
 
 const logRequest = (feature, requester, requesterModel, inputSummary, outputSummary, durationMs) =>
@@ -21,12 +20,10 @@ exports.generateResume = async (req, res, next) => {
   try {
     const student = req.user;
     const filename = `ai-resume-${student._id}-${Date.now()}.pdf`;
-    const directory = path.join(__dirname, "..", "..", "uploads", "resumes");
-    fs.mkdirSync(directory, { recursive: true });
-    const filePath = path.join(directory, filename);
     const document = new PDFDocument({ margin: 50 });
-    const stream = fs.createWriteStream(filePath);
-    document.pipe(stream);
+    const chunks = [];
+    document.on("data", (chunk) => chunks.push(chunk));
+    const finished = new Promise((resolve, reject) => { document.on("end", resolve); document.on("error", reject); });
     document.fontSize(22).text(student.fullName).fontSize(10).text(`${student.email} | ${student.phone}`);
     if (student.bio) document.moveDown().fontSize(12).text("SUMMARY").fontSize(10).text(student.bio);
     if (student.skills?.length) document.moveDown().fontSize(12).text("SKILLS").fontSize(10).text(student.skills.join(", "));
@@ -34,7 +31,8 @@ exports.generateResume = async (req, res, next) => {
     if (student.experience?.length) document.moveDown().fontSize(12).text("EXPERIENCE").fontSize(10).text(student.experience.map((item) => `${item.position}, ${item.company}\n${item.description}`).join("\n\n"));
     if (student.certifications?.length) document.moveDown().fontSize(12).text("CERTIFICATIONS").fontSize(10).text(student.certifications.map((item) => `${item.name} - ${item.issuer}`).join("\n"));
     document.end();
-    await new Promise((resolve, reject) => { stream.on("finish", resolve); stream.on("error", reject); });
+    await finished;
+    await fileStore.save("resumes", filename, Buffer.concat(chunks), "application/pdf");
     student.aiResumeUrl = `/uploads/resumes/${filename}`;
     await student.save();
     await logRequest("resume-analysis", student._id, "Student", "profile data", "AI resume PDF generated", 0);

@@ -1,12 +1,10 @@
 const mongoose = require("mongoose");
-const fs = require("fs");
-const path = require("path");
 const Post = require("../../models/Post");
 const AppError = require("../../utils/AppError");
+const fileStore = require("../../utils/fileStore");
 const { success } = require("../../utils/apiResponse");
 const createNotification = require("../../utils/createNotification");
 
-const UPLOAD_ROOT = path.join(__dirname, "..", "..", "uploads");
 
 function actorModelFromRole(role) {
   return role === "student" ? "Student" : "Company";
@@ -17,11 +15,7 @@ function isPostOwner(post, userId, userRole) {
 }
 
 function removeUploadedFile(fileUrl) {
-  if (!fileUrl || !fileUrl.startsWith("/uploads/")) return;
-  const relative = fileUrl.replace("/uploads/", "");
-  const absolute = path.join(UPLOAD_ROOT, relative);
-  if (!absolute.startsWith(UPLOAD_ROOT)) return;
-  if (fs.existsSync(absolute)) fs.unlinkSync(absolute);
+  fileStore.removeByUrl(fileUrl).catch((err) => console.error("Failed to remove uploaded file:", err.message));
 }
 
 function profileLinkForOwner(post) {
