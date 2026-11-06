@@ -12,15 +12,15 @@ import AdminMessagingPage from '@/pages/admin/AdminMessagingPage';
 export default function AdminApp() {
   return (
     <Routes>
-      <Route path="/admin" element={<AdminEntry />} />
+      <Route index element={<AdminEntry />} />
       <Route element={<ProtectedRoute role="admin"><DashboardLayout /></ProtectedRoute>}>
-        <Route path="/admin/dashboard" element={<AdminDashboard />} />
-        <Route path="/admin/verifications" element={<AdminVerificationsPage />} />
-        <Route path="/admin/companies" element={<AdminCompaniesPage />} />
-        <Route path="/admin/students" element={<AdminStudentsPage />} />
-        <Route path="/admin/messages" element={<AdminMessagingPage />} />
+        <Route path="dashboard" element={<AdminDashboard />} />
+        <Route path="verifications" element={<AdminVerificationsPage />} />
+        <Route path="companies" element={<AdminCompaniesPage />} />
+        <Route path="students" element={<AdminStudentsPage />} />
+        <Route path="messages" element={<AdminMessagingPage />} />
       </Route>
-      <Route path="*" element={<Navigate to="/admin" replace />} />
+      <Route path="*" element={<Navigate to="." replace />} />
     </Routes>
   );
 }
