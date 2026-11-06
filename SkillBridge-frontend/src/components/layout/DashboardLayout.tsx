@@ -35,7 +35,7 @@ const companyNav: NavItem[] = [
 ];
 
 const adminNav: NavItem[] = [
-  { to: '/admin', label: 'Dashboard', icon: LayoutDashboard },
+  { to: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { to: '/admin/verifications', label: 'Verifications', icon: ShieldCheck },
   { to: '/admin/companies', label: 'Companies', icon: Building2 },
   { to: '/admin/students', label: 'Students', icon: Users },
@@ -62,7 +62,7 @@ export function DashboardLayout() {
 
   const handleLogout = () => {
     logout();
-    navigate('/login');
+    navigate(role === 'admin' ? '/admin' : '/login');
   };
 
   return (
@@ -109,7 +109,7 @@ function SidebarContent({ nav, role, onNavigate, onLogout }: { nav: NavItem[]; r
   return (
     <>
       <div className="flex h-16 items-center gap-2.5 border-b border-ink-100 px-5">
-        <Link to={`/${role}`} className="flex items-center gap-2.5">
+        <Link to={role === 'admin' ? '/admin/dashboard' : `/${role}`} className="flex items-center gap-2.5">
           <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-brand-600 text-white">
             <GraduationCap className="h-5 w-5" />
           </div>

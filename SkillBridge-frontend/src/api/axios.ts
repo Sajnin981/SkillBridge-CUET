@@ -13,6 +13,12 @@ export type {
 
 const TOKEN_KEY = 'skillbridge_token';
 const AUTH_KEY = 'skillbridge_auth';
+const ADMIN_TOKEN_KEY = 'skillbridge_admin_token';
+const ADMIN_AUTH_KEY = 'skillbridge_admin_auth';
+
+function isAdminRequest(url?: string): boolean {
+  return Boolean(url && /(?:^|\/)admin(?:\/|$)/.test(url)) || window.location.pathname.startsWith('/admin');
+}
 
 export const api: AxiosInstance = axios.create({
   baseURL: import.meta.env.VITE_API_URL || 'http://localhost:8080/api',
@@ -30,7 +36,7 @@ export function resolveAssetUrl(src?: string): string {
 }
 
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem(TOKEN_KEY);
+  const token = localStorage.getItem(isAdminRequest(config.url) ? ADMIN_TOKEN_KEY : TOKEN_KEY);
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
@@ -41,18 +47,22 @@ api.interceptors.response.use(
   (response) => response,
   (error: AxiosError<ApiEnvelope>) => {
     if (error.response?.status === 401) {
-      localStorage.removeItem(TOKEN_KEY);
-      localStorage.removeItem(AUTH_KEY);
-      if (!window.location.pathname.startsWith('/login')) {
-        window.location.href = '/login';
+      const adminRequest = isAdminRequest(error.config?.url);
+      localStorage.removeItem(adminRequest ? ADMIN_TOKEN_KEY : TOKEN_KEY);
+      localStorage.removeItem(adminRequest ? ADMIN_AUTH_KEY : AUTH_KEY);
+      const loginPath = adminRequest ? '/admin' : '/login';
+      if (window.location.pathname !== loginPath) {
+        window.location.href = loginPath;
       }
     }
     return Promise.reject(error);
   },
 );
 
-export const setAuthToken = (token: string) => localStorage.setItem(TOKEN_KEY, token);
-export const clearAuthToken = () => localStorage.removeItem(TOKEN_KEY);
+export const setAuthToken = (token: string, role: 'student' | 'company' | 'admin') =>
+  localStorage.setItem(role === 'admin' ? ADMIN_TOKEN_KEY : TOKEN_KEY, token);
+export const clearAuthToken = (scope: 'admin' | 'user') =>
+  localStorage.removeItem(scope === 'admin' ? ADMIN_TOKEN_KEY : TOKEN_KEY);
 
 export interface ApiEnvelope<T = unknown> {
   success: boolean;

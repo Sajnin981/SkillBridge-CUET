@@ -12,7 +12,11 @@ export interface AuthUser {
   status?: string;
 }
 
-const STORAGE_KEY = 'skillbridge_auth';
+const STORAGE_KEYS = {
+  admin: 'skillbridge_admin_auth',
+  user: 'skillbridge_auth',
+} as const;
+type AuthScope = keyof typeof STORAGE_KEYS;
 
 interface LoginResponse {
   user: BackendStudent | BackendCompany | BackendAdmin;
@@ -39,9 +43,9 @@ export const authService = {
   async login(email: string, password: string, role: Role): Promise<AuthUser> {
     const res = await api.post<ApiEnvelope<LoginResponse>>('/auth/login', { email, password, role });
     const { user, token, role: backendRole } = res.data.data;
-    setAuthToken(token);
+    setAuthToken(token, backendRole);
     const mapped = mapBackendUser(user, backendRole);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(mapped));
+    localStorage.setItem(STORAGE_KEYS[backendRole === 'admin' ? 'admin' : 'user'], JSON.stringify(mapped));
     return mapped;
   },
 
@@ -98,30 +102,34 @@ export const authService = {
     return mapBackendUser(user, backendRole);
   },
 
-  async getMe(): Promise<AuthUser | null> {
+  async getMe(scope: AuthScope): Promise<AuthUser | null> {
     try {
       const res = await api.get<ApiEnvelope<{ user: BackendStudent | BackendCompany | BackendAdmin; role: BackendRole }>>('/auth/me');
       const { user, role } = res.data.data;
       const mapped = mapBackendUser(user, role);
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(mapped));
+      localStorage.setItem(STORAGE_KEYS[scope], JSON.stringify(mapped));
       return mapped;
     } catch {
       return null;
     }
   },
 
-  getCurrentUser(): AuthUser | null {
+  hasToken(scope: AuthScope): boolean {
+    return Boolean(localStorage.getItem(scope === 'admin' ? 'skillbridge_admin_token' : 'skillbridge_token'));
+  },
+
+  getCurrentUser(scope: AuthScope): AuthUser | null {
     try {
-      const raw = localStorage.getItem(STORAGE_KEY);
+      const raw = localStorage.getItem(STORAGE_KEYS[scope]);
       return raw ? (JSON.parse(raw) as AuthUser) : null;
     } catch {
       return null;
     }
   },
 
-  logout(): void {
-    clearAuthToken();
-    localStorage.removeItem(STORAGE_KEY);
+  logout(scope: AuthScope): void {
+    clearAuthToken(scope);
+    localStorage.removeItem(STORAGE_KEYS[scope]);
   },
 
   dashboardPath(role: Role): string {

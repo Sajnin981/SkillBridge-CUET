@@ -2,7 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState, t
 import type { Role } from '@/lib/types';
 import { authService, type AuthUser } from '@/services/authService';
 
-const TOKEN_KEY = 'skillbridge_token';
+type AuthScope = 'admin' | 'user';
 
 interface AuthContextValue {
   user: AuthUser | null;
@@ -19,7 +19,7 @@ export function useAuth() {
   return ctx;
 }
 
-export function AuthProvider({ children }: { children: ReactNode }) {
+export function AuthProvider({ children, scope }: { children: ReactNode; scope: AuthScope }) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -27,7 +27,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     let active = true;
 
     const restoreSession = async () => {
-      if (!localStorage.getItem(TOKEN_KEY)) {
+      if (!authService.hasToken(scope)) {
         if (active) {
           setUser(null);
           setLoading(false);
@@ -35,7 +35,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return;
       }
 
-      const currentUser = await authService.getMe();
+      const currentUser = await authService.getMe(scope);
       if (active) {
         setUser(currentUser);
         setLoading(false);
@@ -46,18 +46,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => {
       active = false;
     };
-  }, []);
+  }, [scope]);
 
   const login = useCallback(async (email: string, password: string, role: Role) => {
+    if ((scope === 'admin') !== (role === 'admin')) {
+      throw new Error('This sign-in page does not support that account type.');
+    }
     const u = await authService.login(email, password, role);
     setUser(u);
     return u;
-  }, []);
+  }, [scope]);
 
   const logout = useCallback(() => {
-    authService.logout();
+    authService.logout(scope);
     setUser(null);
-  }, []);
+  }, [scope]);
 
   const value = useMemo(() => ({ user, loading, login, logout }), [user, loading, login, logout]);
 

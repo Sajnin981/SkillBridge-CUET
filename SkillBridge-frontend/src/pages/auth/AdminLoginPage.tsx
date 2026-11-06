@@ -23,7 +23,7 @@ export default function AdminLoginPage() {
     try {
       const user = await login(email.trim(), password, 'admin');
       toast({ title: `Welcome, ${user.name.split(' ')[0]}`, variant: 'success' });
-      navigate('/admin');
+      navigate('/admin/dashboard');
     } catch (err) {
       const apiErr = normalizeError(err);
       toast({ title: 'Admin sign in failed', description: apiErr.message, variant: 'error' });

@@ -1,0 +1,9 @@
+{
+  "name": "skillbridge-cuet",
+  "private": true,
+  "scripts": {
+    "dev": "node scripts/dev.mjs",
+    "dev:frontend": "npm --prefix SkillBridge-frontend run dev",
+    "dev:backend": "npm --prefix SkillBridge-backend run dev"
+  }
+}

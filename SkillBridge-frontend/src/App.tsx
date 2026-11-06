@@ -42,13 +42,42 @@ import CompanyAnalyticsPage from '@/pages/company/CompanyAnalyticsPage';
 import ViewCompanyProfilePage from '@/pages/shared/ViewCompanyProfilePage';
 import ViewStudentProfilePage from '@/pages/shared/ViewStudentProfilePage';
 import SearchPage from '@/pages/shared/SearchPage';
+import AdminApp from './AdminApp';
 
 export default function App() {
   return (
-    <AuthProvider>
+    <BrowserRouter>
+      <Routes>
+        <Route path="/admin/*" element={<AdminShell />} />
+        <Route path="*" element={<UserShell />} />
+      </Routes>
+    </BrowserRouter>
+  );
+}
+
+function AdminShell() {
+  return (
+    <AuthProvider scope="admin">
       <ToastProvider>
-        <BrowserRouter>
-          <Routes>
+        <AdminApp />
+      </ToastProvider>
+    </AuthProvider>
+  );
+}
+
+function UserShell() {
+  return (
+    <AuthProvider scope="user">
+      <ToastProvider>
+        <UserRoutes />
+      </ToastProvider>
+    </AuthProvider>
+  );
+}
+
+function UserRoutes() {
+  return (
+    <Routes>
             {/* Public */}
             <Route path="/" element={<LandingPage />} />
             <Route path="/opportunities" element={<PublicOpportunitiesPage />} />
@@ -99,9 +128,6 @@ export default function App() {
 
             {/* 404 */}
             <Route path="*" element={<NotFoundPage />} />
-          </Routes>
-        </BrowserRouter>
-      </ToastProvider>
-    </AuthProvider>
+    </Routes>
   );
 }
