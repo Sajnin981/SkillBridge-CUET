@@ -160,6 +160,6 @@ function SidebarContent({ nav, role, onNavigate, onLogout }: { nav: NavItem[]; r
   );
 }
 
-export function PageContainer({ children }: { children: ReactNode }) {
-  return <div className="mx-auto w-full max-w-6xl">{children}</div>;
+export function PageContainer({ children, className }: { children: ReactNode; className?: string }) {
+  return <div className={cn('mx-auto w-full max-w-6xl', className)}>{children}</div>;
 }
