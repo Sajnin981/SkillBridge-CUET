@@ -16,6 +16,7 @@ interface Conversation {
   role: string;
   last: string;
   time: string;
+  lastMessageAt: string;
   unread: number;
   online: boolean;
 }
@@ -25,6 +26,7 @@ interface Message {
   from: 'me' | 'them';
   text: string;
   time: string;
+  createdAt?: string;
 }
 
 export default function MessagingPage() {
@@ -51,9 +53,7 @@ export default function MessagingPage() {
     }).catch(() => setLoading(false));
   }, [user]);
 
-  const handleSendMessage = async (conversationId: string, text: string) => {
-    await messageService.sendMessage(conversationId, text);
-  };
+  const handleSendMessage = (conversationId: string, text: string) => messageService.sendMessage(conversationId, text);
 
   const contactAdmin = async () => {
     try {

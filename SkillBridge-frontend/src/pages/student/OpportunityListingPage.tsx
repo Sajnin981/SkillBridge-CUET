@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { LayoutGrid, List as ListIcon, SlidersHorizontal, X } from 'lucide-react';
 import { PageContainer } from '@/components/layout/DashboardLayout';
 import { OpportunityCard } from '@/components/shared/OpportunityCard';
@@ -18,44 +18,76 @@ const sortOptions = [
   { value: 'applicants', label: 'Most Applied' },
 ];
 
+const backendTypeByLabel: Partial<Record<Opportunity['type'], string[]>> = {
+  Internship: ['internship', 'industrial-training'],
+  Job: ['job'],
+  Freelancing: ['freelancing'],
+  Research: ['research'],
+  Competition: ['competition'],
+};
+
 export default function OpportunityListingPage() {
   const [view, setView] = useState<'grid' | 'list'>('grid');
   const [search, setSearch] = useState('');
   const [sort, setSort] = useState('recent');
   const [page, setPage] = useState(1);
-  const [filters, setFilters] = useState<FilterState>({ types: [], remoteOnly: false, location: '', experience: 'Any', salaryMin: 0 });
+  const [filters, setFilters] = useState<FilterState>({ types: [], remoteOnly: false, location: '', skills: [], experience: 'Any', salaryMin: 0 });
   const [opportunities, setOpportunities] = useState<Opportunity[]>([]);
+  const [locations, setLocations] = useState<string[]>([]);
+  const [availableSkills, setAvailableSkills] = useState<string[]>([]);
+  const [filterOptionsError, setFilterOptionsError] = useState(false);
+  const [totalCount, setTotalCount] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+  const [error, setError] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    opportunityService.getAll().then((o) => { setOpportunities(o); setLoading(false); });
+    opportunityService.getFilterOptions().then((options) => {
+      setLocations(options.locations);
+      setAvailableSkills(options.skills);
+    }).catch(() => {
+      setLocations([]);
+      setAvailableSkills([]);
+      setFilterOptionsError(true);
+    });
   }, []);
 
-  const filtered = useMemo(() => {
-    let list = opportunities.filter((o) => {
-      if (search && !o.title.toLowerCase().includes(search.toLowerCase()) && !o.company.toLowerCase().includes(search.toLowerCase()) && !o.skills.some((s) => s.toLowerCase().includes(search.toLowerCase()))) return false;
-      if (filters.types.length && !filters.types.includes(o.type)) return false;
-      if (filters.remoteOnly && !o.remote) return false;
-      if (filters.location && o.location !== filters.location) return false;
-      if (filters.experience !== 'Any' && o.experience !== filters.experience) return false;
-      return true;
+  useEffect(() => {
+    let active = true;
+    setLoading(true);
+    setError(false);
+    opportunityService.getPage({
+      type: filters.types.flatMap((type) => backendTypeByLabel[type] || []),
+      search: search.trim() || undefined,
+      location: filters.location || undefined,
+      isRemote: filters.remoteOnly || undefined,
+      skills: filters.skills,
+      page,
+      limit: 6,
+      sort: sort === 'deadline' ? 'deadline' : sort === 'applicants' ? 'applicants' : '-createdAt',
+    }).then((result) => {
+      if (!active) return;
+      setOpportunities(result.items);
+      setTotalCount(result.pagination.total);
+      setTotalPages(result.pagination.totalPages);
+    }).catch(() => {
+      if (!active) return;
+      setOpportunities([]);
+      setTotalCount(0);
+      setTotalPages(1);
+      setError(true);
+    }).finally(() => {
+      if (active) setLoading(false);
     });
-    if (sort === 'recent') list = [...list].sort((a, b) => +new Date(b.postedAt) - +new Date(a.postedAt));
-    if (sort === 'deadline') list = [...list].sort((a, b) => +new Date(a.deadline) - +new Date(b.deadline));
-    if (sort === 'applicants') list = [...list].sort((a, b) => b.applicants - a.applicants);
-    return list;
-  }, [opportunities, search, filters, sort]);
-
-  const perPage = 6;
-  const totalPages = Math.ceil(filtered.length / perPage);
-  const paged = filtered.slice((page - 1) * perPage, page * perPage);
+    return () => { active = false; };
+  }, [filters, page, search, sort]);
 
   return (
     <PageContainer>
       <div className="mb-6 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h2 className="font-display text-2xl font-bold text-ink-800">Opportunities</h2>
-          <p className="mt-1 text-sm text-ink-500">{loading ? 'Loading…' : `${filtered.length} opportunities found`}</p>
+          <p className="mt-1 text-sm text-ink-500">{loading ? 'Loading…' : `${totalCount} opportunities found`}</p>
         </div>
       </div>
 
@@ -75,29 +107,37 @@ export default function OpportunityListingPage() {
         </div>
       </div>
 
-      {(filters.types.length > 0 || filters.remoteOnly || filters.location) && (
+      {(filters.types.length > 0 || filters.remoteOnly || filters.location || filters.skills.length > 0) && (
         <div className="mb-4 flex flex-wrap items-center gap-2">
           {filters.types.map((t) => (
-            <button key={t} onClick={() => setFilters({ ...filters, types: filters.types.filter((x) => x !== t) })} className="chip bg-brand-50 text-brand-700 ring-1 ring-brand-200/60">
+            <button key={t} onClick={() => { setFilters({ ...filters, types: filters.types.filter((x) => x !== t) }); setPage(1); }} className="chip bg-brand-50 text-brand-700 ring-1 ring-brand-200/60">
               {t}<X className="h-3 w-3" />
             </button>
           ))}
-          {filters.remoteOnly && <button onClick={() => setFilters({ ...filters, remoteOnly: false })} className="chip bg-brand-50 text-brand-700 ring-1 ring-brand-200/60">Remote<X className="h-3 w-3" /></button>}
-          {filters.location && <button onClick={() => setFilters({ ...filters, location: '' })} className="chip bg-brand-50 text-brand-700 ring-1 ring-brand-200/60">{filters.location}<X className="h-3 w-3" /></button>}
+          {filters.remoteOnly && <button onClick={() => { setFilters({ ...filters, remoteOnly: false }); setPage(1); }} className="chip bg-brand-50 text-brand-700 ring-1 ring-brand-200/60">Remote<X className="h-3 w-3" /></button>}
+          {filters.location && <button onClick={() => { setFilters({ ...filters, location: '' }); setPage(1); }} className="chip bg-brand-50 text-brand-700 ring-1 ring-brand-200/60">{filters.location}<X className="h-3 w-3" /></button>}
+          {filters.skills.map((skill) => (
+            <button key={skill} onClick={() => { setFilters({ ...filters, skills: filters.skills.filter((selected) => selected !== skill) }); setPage(1); }} className="chip bg-brand-50 text-brand-700 ring-1 ring-brand-200/60">
+              {skill}<X className="h-3 w-3" />
+            </button>
+          ))}
         </div>
       )}
 
+      {filterOptionsError && <p className="mb-3 text-xs text-danger-600">Could not load location and skills filter options.</p>}
       <div className="flex gap-6">
-        <FilterSidebar filters={filters} onChange={(f) => { setFilters(f); setPage(1); }} />
+        <FilterSidebar filters={filters} locations={locations} skills={availableSkills} onChange={(f) => { setFilters(f); setPage(1); }} />
         <div className="min-w-0 flex-1">
           {loading ? (
             <div className="grid gap-4 sm:grid-cols-2">{[...Array(4)].map((_, i) => <SkeletonCard key={i} />)}</div>
-          ) : paged.length === 0 ? (
-            <EmptyState icon={<SlidersHorizontal className="h-7 w-7" />} title="No opportunities available" description="New opportunities will appear here once companies post them. Try adjusting your filters." action={<Button variant="outline" onClick={() => { setFilters({ types: [], remoteOnly: false, location: '', experience: 'Any', salaryMin: 0 }); setSearch(''); }}>Clear all filters</Button>} />
+          ) : error ? (
+            <div className="card p-6 text-center text-sm text-danger-600">Could not load opportunities. Please try again.</div>
+          ) : opportunities.length === 0 ? (
+            <EmptyState icon={<SlidersHorizontal className="h-7 w-7" />} title="No opportunities available" description="New opportunities will appear here once companies post them. Try adjusting your filters." action={<Button variant="outline" onClick={() => { setFilters({ types: [], remoteOnly: false, location: '', skills: [], experience: 'Any', salaryMin: 0 }); setSearch(''); setPage(1); }}>Clear all filters</Button>} />
           ) : (
             <>
               <div className={cn(view === 'grid' ? 'grid gap-4 sm:grid-cols-2' : 'space-y-4')}>
-                {paged.map((o) => <OpportunityCard key={o.id} opportunity={o} view={view} />)}
+                {opportunities.map((o) => <OpportunityCard key={o.id} opportunity={o} view={view} />)}
               </div>
               <div className="mt-8"><Pagination page={page} totalPages={totalPages} onChange={setPage} /></div>
             </>

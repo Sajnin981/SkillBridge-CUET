@@ -1,12 +1,16 @@
 require("dotenv").config();
+const http = require("node:http");
 const app = require("./app");
 const connectDB = require("./config/db");
+const attachSocketServer = require("./services/socketServer");
 
-const PORT = 8080;
+const PORT = Number(process.env.PORT) || 8080;
 
 const start = async () => {
   await connectDB();
-  app.listen(PORT, () => {
+  const server = http.createServer(app);
+  attachSocketServer(server, app);
+  server.listen(PORT, () => {
     console.log(`🚀 SkillBridge CUET API running on port ${PORT}`);
   });
 };

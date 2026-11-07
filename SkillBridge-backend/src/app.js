@@ -4,6 +4,7 @@ const helmet = require("helmet");
 const morgan = require("morgan");
 const cookieParser = require("cookie-parser");
 const fileStore = require("./utils/fileStore");
+const isAllowedOrigin = require("./utils/isAllowedOrigin");
 
 const { apiLimiter } = require("./middlewares/rateLimiter");
 const { errorHandler, notFound } = require("./middlewares/error");
@@ -20,17 +21,7 @@ app.use(helmet({
 app.use(
   cors({
     origin: (origin, callback) => {
-      // CLIENT_URL may hold several comma-separated origins; trailing slashes are ignored.
-      const normalize = (value) => value.trim().replace(/\/+$/, "");
-      const allowedOrigins = (process.env.CLIENT_URL || "").split(",").filter(Boolean).map(normalize);
-      if (
-        !origin ||
-        allowedOrigins.includes(origin) ||
-        [
-          "http://localhost:5173",
-          "http://127.0.0.1:5173",
-        ].includes(origin)
-      ) {
+      if (isAllowedOrigin(origin)) {
         return callback(null, true);
       }
       return callback(new Error("Origin is not allowed by CORS"));

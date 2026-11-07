@@ -145,6 +145,8 @@ export interface BackendConversation {
   admin?: string | { _id: string; name: string; email?: string };
   opportunity?: string | { _id: string; title: string; type: string } | null;
   lastMessageAt: string;
+  lastMessage?: BackendMessage | null;
+  unreadCount?: number;
   createdAt: string;
   updatedAt: string;
 }

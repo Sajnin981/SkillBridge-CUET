@@ -8,6 +8,7 @@ import AdminCompaniesPage from '@/pages/admin/AdminCompaniesPage';
 import AdminVerificationsPage from '@/pages/admin/AdminVerificationsPage';
 import AdminStudentsPage from '@/pages/admin/AdminStudentsPage';
 import AdminMessagingPage from '@/pages/admin/AdminMessagingPage';
+import NotificationsPage from '@/pages/student/NotificationsPage';
 
 export default function AdminApp() {
   return (
@@ -19,6 +20,7 @@ export default function AdminApp() {
         <Route path="companies" element={<AdminCompaniesPage />} />
         <Route path="students" element={<AdminStudentsPage />} />
         <Route path="messages" element={<AdminMessagingPage />} />
+        <Route path="notifications" element={<NotificationsPage />} />
       </Route>
       <Route path="*" element={<Navigate to="." replace />} />
     </Routes>

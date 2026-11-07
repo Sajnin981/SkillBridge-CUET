@@ -3,14 +3,14 @@ import { SlidersHorizontal, ChevronDown, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { OpportunityType } from '@/lib/types';
 
-const types: OpportunityType[] = ['Internship', 'Job', 'Freelancing', 'Research', 'Competition', 'Scholarship', 'Part-time'];
-const locations = ['Dhaka, BD', 'Chittagong, BD', 'Remote', 'Nationwide'];
+const types: OpportunityType[] = ['Internship', 'Job', 'Freelancing', 'Research', 'Competition'];
 const experiences = ['Any', '0-1 yrs', '1-2 yrs', '1-3 yrs', '2+ yrs'];
 
 export interface FilterState {
   types: OpportunityType[];
   remoteOnly: boolean;
   location: string;
+  skills: string[];
   experience: string;
   salaryMin: number;
 }
@@ -18,10 +18,12 @@ export interface FilterState {
 interface FilterSidebarProps {
   filters: FilterState;
   onChange: (f: FilterState) => void;
+  locations: string[];
+  skills: string[];
   className?: string;
 }
 
-export function FilterSidebar({ filters, onChange, className }: FilterSidebarProps) {
+export function FilterSidebar({ filters, onChange, locations, skills, className }: FilterSidebarProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
 
   const toggleType = (t: OpportunityType) => {
@@ -29,7 +31,7 @@ export function FilterSidebar({ filters, onChange, className }: FilterSidebarPro
     onChange({ ...filters, types: next });
   };
 
-  const reset = () => onChange({ types: [], remoteOnly: false, location: '', experience: 'Any', salaryMin: 0 });
+  const reset = () => onChange({ types: [], remoteOnly: false, location: '', skills: [], experience: 'Any', salaryMin: 0 });
 
   const content = (
     <div className="space-y-6">
@@ -59,13 +61,36 @@ export function FilterSidebar({ filters, onChange, className }: FilterSidebarPro
       </FilterSection>
 
       <FilterSection title="Location">
-        <div className="space-y-2">
+        <div className="max-h-48 space-y-2 overflow-y-auto">
           {locations.map((l) => (
             <label key={l} className="flex cursor-pointer items-center gap-2.5 text-sm text-ink-600">
               <input type="radio" name="location" checked={filters.location === l} onChange={() => onChange({ ...filters, location: l })} className="h-4 w-4 border-ink-300 text-brand-600 focus:ring-brand-500" />
               {l}
             </label>
           ))}
+          {locations.length === 0 && <p className="text-xs text-ink-400">No locations available yet.</p>}
+        </div>
+      </FilterSection>
+
+      <FilterSection title="Required Skills">
+        <div className="max-h-48 space-y-2 overflow-y-auto">
+          {skills.map((skill) => (
+            <label key={skill} className="flex cursor-pointer items-center gap-2.5 text-sm text-ink-600">
+              <input
+                type="checkbox"
+                checked={filters.skills.includes(skill)}
+                onChange={() => onChange({
+                  ...filters,
+                  skills: filters.skills.includes(skill)
+                    ? filters.skills.filter((selected) => selected !== skill)
+                    : [...filters.skills, skill],
+                })}
+                className="h-4 w-4 rounded border-ink-300 text-brand-600 focus:ring-brand-500"
+              />
+              {skill}
+            </label>
+          ))}
+          {skills.length === 0 && <p className="text-xs text-ink-400">No required skills available yet.</p>}
         </div>
       </FilterSection>
 

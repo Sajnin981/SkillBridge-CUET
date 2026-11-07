@@ -5,6 +5,7 @@ import { Avatar } from '@/components/ui/Avatar';
 import { notificationService } from '@/services/notificationService';
 import { timeAgo } from '@/lib/utils';
 import type { Notification, Role } from '@/lib/types';
+import { useToast } from '@/components/ui/Toast';
 
 const icons = {
   application: CheckCircle2,
@@ -27,13 +28,24 @@ interface NotificationDropdownProps {
 }
 
 export function NotificationDropdown({ role }: NotificationDropdownProps) {
+  const { toast } = useToast();
   const [open, setOpen] = useState(false);
   const [items, setItems] = useState<Notification[]>([]);
+  const [loadError, setLoadError] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const unread = items.filter((n) => !n.read).length;
 
   useEffect(() => {
-    notificationService.getAll(role).then(setItems);
+    let active = true;
+    notificationService.getAll(role).then((notifications) => {
+      if (active) {
+        setItems(notifications);
+        setLoadError(false);
+      }
+    }).catch(() => {
+      if (active) setLoadError(true);
+    });
+    return () => { active = false; };
   }, [role]);
 
   useEffect(() => {
@@ -44,9 +56,13 @@ export function NotificationDropdown({ role }: NotificationDropdownProps) {
     return () => document.removeEventListener('mousedown', onClick);
   }, []);
 
-  const markAllRead = () => {
-    setItems((prev) => prev.map((n) => ({ ...n, read: true })));
-    notificationService.markAllRead();
+  const markAllRead = async () => {
+    try {
+      await notificationService.markAllRead();
+      setItems((prev) => prev.map((n) => ({ ...n, read: true })));
+    } catch {
+      toast({ title: 'Could not mark notifications as read', variant: 'error' });
+    }
   };
 
   return (
@@ -65,14 +81,16 @@ export function NotificationDropdown({ role }: NotificationDropdownProps) {
             <button onClick={markAllRead} className="text-xs font-medium text-brand-600 hover:text-brand-700">Mark all read</button>
           </div>
           <div className="max-h-96 overflow-y-auto scrollbar-thin">
-            {items.length === 0 ? (
+            {loadError ? (
+              <div className="p-8 text-center text-sm text-danger-600">Could not load notifications.</div>
+            ) : items.length === 0 ? (
               <div className="p-8 text-center text-sm text-ink-400">No notifications yet</div>
             ) : (
               items.map((n) => {
-                const Icon = icons[n.type];
+                const Icon = icons[n.type] || Info;
                 return (
-                  <Link to={n.link || `/${role}/notifications`} key={n.id} onClick={() => { if (!n.read) notificationService.markRead(n.id); setOpen(false); }} className={`flex gap-3 border-b border-ink-50 p-4 transition hover:bg-ink-50 ${!n.read ? 'bg-brand-50/40' : ''}`}>
-                    <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${tones[n.type]}`}>
+                  <Link to={n.link || `/${role}/notifications`} key={n.id} onClick={() => { if (!n.read) void notificationService.markRead(n.id).catch(() => toast({ title: 'Could not mark notification as read', variant: 'error' })); setOpen(false); }} className={`flex gap-3 border-b border-ink-50 p-4 transition hover:bg-ink-50 ${!n.read ? 'bg-brand-50/40' : ''}`}>
+                    <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${tones[n.type] || tones.system}`}>
                       <Icon className="h-4 w-4" />
                     </div>
                     <div className="flex-1">

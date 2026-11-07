@@ -72,7 +72,6 @@ export default function AdminCompaniesPage() {
                 <th className="px-4 py-3">Company</th>
                 <th className="hidden px-4 py-3 sm:table-cell">Industry</th>
                 <th className="px-4 py-3">Status</th>
-                <th className="hidden px-4 py-3 sm:table-cell">Open Roles</th>
                 <th className="px-4 py-3" />
               </tr>
             </thead>
@@ -87,7 +86,6 @@ export default function AdminCompaniesPage() {
                   </td>
                   <td className="hidden px-4 py-3 sm:table-cell"><span className="text-sm text-ink-600">{c.industry}</span></td>
                   <td className="px-4 py-3"><Badge tone={statusTone[c.status]}>{c.status}</Badge></td>
-                  <td className="hidden px-4 py-3 sm:table-cell"><span className="text-sm font-semibold text-ink-700">{c.openRoles}</span></td>
                   <td className="px-4 py-3"><Button variant="ghost" size="icon" onClick={() => deleteCompany(c)} aria-label={`Delete ${c.name}`}><Trash2 className="h-4 w-4 text-danger-500" /></Button></td>
                 </tr>
               ))}

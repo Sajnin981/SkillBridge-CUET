@@ -163,9 +163,10 @@ export default function ApplicantsPage() {
                 <div className="mt-3 flex flex-wrap gap-1.5">
                   {a.skills.slice(0, 3).map((s) => <span key={s} className="chip bg-ink-100 text-ink-600 text-[11px]">{s}</span>)}
                 </div>
-                <div className="mt-4 flex items-center gap-2 border-t border-ink-100 pt-4">
+                <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-ink-100 pt-4">
                   <Button size="sm" variant="outline" className="flex-1" onClick={() => navigate(`/company/students/${a.studentId}`)}><Eye className="h-3.5 w-3.5" />View</Button>
                   <Button size="sm" variant={a.shortlisted ? 'success' : 'outline'} onClick={() => shortlist(a.id)}><CheckCircle2 className="h-3.5 w-3.5" />{a.shortlisted ? 'Shortlisted' : 'Shortlist'}</Button>
+                  <Button size="sm" variant="outline" onClick={() => messageApplicant(a)} disabled={messaging}><MessageSquare className="h-3.5 w-3.5" />Message</Button>
                   <Button size="sm" variant="ghost" onClick={() => reject(a.id)}><XCircle className="h-3.5 w-3.5" /></Button>
                 </div>
               </Card>
@@ -208,4 +209,3 @@ export default function ApplicantsPage() {
     </PageContainer>
   );
 }
-

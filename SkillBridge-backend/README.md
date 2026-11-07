@@ -23,7 +23,7 @@ The backend exposes a clean REST API with a consistent JSON envelope, JWT authen
 - **Opportunities** — Full CRUD for companies; public search, filter, and pagination for students; six opportunity types
 - **Applications** — Students apply, withdraw, and track status; companies view applicants, shortlist, reject, schedule interviews, and offer; duplicate prevention
 - **Application Status Flow** — `pending → reviewing → shortlisted → interview → offered → rejected` (plus student-initiated `withdrawn`)
-- **Messaging** — Student ↔ Company conversations with read status and timestamps
+- **Messaging** — Authenticated real-time conversation delivery with REST history, read status, and reconnect recovery
 - **Notifications** — Per-user notifications with read/unread tracking
 - **AI Placeholder APIs** — Resume analysis, opportunity recommendations, and candidate matching (mock responses, logged for admin audit)
 - **Admin Dashboard** — Verification queue, user management, platform analytics, reports, AI logs, opportunity moderation
@@ -57,7 +57,7 @@ backend/
 │   │     Opportunity.js  Student.js
 │   ├── routes/                  # Express route definitions
 │   ├── middlewares/             # auth, upload, validate, rateLimiter, error
-│   ├── services/                # authService (JWT + login logic)
+│   ├── services/                # authService (JWT + login logic), socketServer
 │   ├── validators/              # express-validator chains
 │   ├── utils/                   # apiResponse, AppError, castDBError
 │   ├── uploads/                 # Multer destination folders
@@ -80,6 +80,7 @@ backend/
 |-----------------|--------------------------------|
 | Runtime         | Node.js                        |
 | Framework       | Express.js                     |
+| Real-time       | Socket.IO                      |
 | Database        | MongoDB                        |
 | ODM             | Mongoose                       |
 | Authentication  | JWT (jsonwebtoken)             |
@@ -91,6 +92,10 @@ backend/
 | Validation      | express-validator              |
 | Cookies         | cookie-parser                  |
 | Dev Server      | Nodemon                        |
+
+### Real-time messaging deployment
+
+`npm start` runs the Express API and authenticated Socket.IO server on the same persistent Node.js process. The Vercel `api/index.js` entry point remains REST-only because Vercel serverless functions do not keep Socket.IO connections alive. For deployed live messaging, run this backend on a persistent Node.js host, set `CLIENT_URL` to the frontend origin, and set the frontend `VITE_API_URL` to that host's `/api` URL. The frontend derives the socket origin from `VITE_API_URL`; the REST endpoints continue to provide message history and reconnect recovery.
 
 ---
 
@@ -133,6 +138,7 @@ All responses use the envelope: `{ success, message, data?, errors? }`
 | Method | Path                       | Access | Description                    |
 |--------|----------------------------|--------|--------------------------------|
 | GET    | /api/opportunities         | Public | List + search + filter + pagination |
+| GET    | /api/opportunities/filters | Public | Actual locations and required skills |
 | GET    | /api/opportunities/:id     | Public | Single opportunity             |
 
 ### Applications

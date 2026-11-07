@@ -3,6 +3,7 @@ const Company = require("../../models/Company");
 const AppError = require("../../utils/AppError");
 const { success } = require("../../utils/apiResponse");
 const { signToken } = require("../../services/authService");
+const notifyAdminsOfEvent = require("../../utils/notifyAdminsOfEvent");
 
 /**
  * POST /api/auth/student/register
@@ -38,6 +39,14 @@ exports.registerStudent = async (req, res, next) => {
       password,
       idCardUrl: `/uploads/student-ids/${idCardFile.filename}`,
       resumeUrl: resumeFile ? `/uploads/resumes/${resumeFile.filename}` : "",
+    });
+
+    await notifyAdminsOfEvent({
+      title: "Student verification pending",
+      body: `${student.fullName} registered and is awaiting account verification.`,
+      link: "/admin/verifications",
+      actor: student._id,
+      actorModel: "Student",
     });
 
     const token = signToken(student._id, "student");
@@ -85,6 +94,14 @@ exports.registerCompany = async (req, res, next) => {
       password,
       tradeLicenseUrl: `/uploads/trade-licenses/${tradeLicenseFile.filename}`,
       logoUrl: logoFile ? `/uploads/company-logos/${logoFile.filename}` : "",
+    });
+
+    await notifyAdminsOfEvent({
+      title: "Company verification pending",
+      body: `${company.companyName} registered and is awaiting account verification.`,
+      link: "/admin/companies",
+      actor: company._id,
+      actorModel: "Company",
     });
 
     const token = signToken(company._id, "company");

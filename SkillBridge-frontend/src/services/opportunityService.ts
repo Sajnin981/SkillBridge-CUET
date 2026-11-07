@@ -7,7 +7,40 @@ interface PaginatedOpps {
   pagination: Pagination;
 }
 
+export interface OpportunityFilterOptions {
+  locations: string[];
+  skills: string[];
+}
+
 export const opportunityService = {
+  async getPage(params?: {
+    type?: string[];
+    search?: string;
+    location?: string;
+    isRemote?: boolean;
+    skills?: string[];
+    page?: number;
+    limit?: number;
+    sort?: string;
+  }): Promise<{ items: Opportunity[]; pagination: Pagination }> {
+    const res = await api.get<ApiEnvelope<PaginatedOpps>>('/opportunities', {
+      params: {
+        ...params,
+        type: params?.type?.join(','),
+        skills: params?.skills?.join(','),
+      },
+    });
+    return {
+      items: res.data.data.items.map(mapOpportunity),
+      pagination: res.data.data.pagination,
+    };
+  },
+
+  async getFilterOptions(): Promise<OpportunityFilterOptions> {
+    const res = await api.get<ApiEnvelope<OpportunityFilterOptions>>('/opportunities/filters');
+    return res.data.data;
+  },
+
   async getAll(params?: { type?: string; search?: string; location?: string; isRemote?: boolean; status?: string; page?: number; limit?: number; sort?: string }): Promise<Opportunity[]> {
     const res = await api.get<ApiEnvelope<PaginatedOpps>>('/opportunities', { params });
     return res.data.data.items.map(mapOpportunity);

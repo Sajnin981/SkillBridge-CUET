@@ -10,8 +10,8 @@ import { searchService } from '@/services/searchService';
 import { normalizeError } from '@/api/axios';
 import type { BackendCompany, BackendStudent } from '@/api/types';
 
-interface Conversation { id: string; name: string; avatar: string; participantPath?: string; role: string; last: string; time: string; unread: number; online: boolean }
-interface Message { id: string; from: 'me' | 'them'; text: string; time: string }
+interface Conversation { id: string; name: string; avatar: string; participantPath?: string; role: string; last: string; time: string; lastMessageAt: string; unread: number; online: boolean }
+interface Message { id: string; from: 'me' | 'them'; text: string; time: string; createdAt?: string }
 
 export default function AdminMessagingPage() {
   const { user } = useAuth();
@@ -56,7 +56,7 @@ export default function AdminMessagingPage() {
     }
   };
 
-  const handleSendMessage = async (conversationId: string, text: string) => { await messageService.sendMessage(conversationId, text); };
+  const handleSendMessage = (conversationId: string, text: string) => messageService.sendMessage(conversationId, text);
 
   if (loading) return <div className="py-20 text-center text-sm text-ink-400">Loading messages…</div>;
 

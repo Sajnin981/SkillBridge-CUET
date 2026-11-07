@@ -26,7 +26,11 @@ export const api: AxiosInstance = axios.create({
 });
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api';
-const API_ORIGIN = API_BASE_URL.replace(/\/api\/?$/, '');
+export const API_ORIGIN = API_BASE_URL.replace(/\/api\/?$/, '');
+
+export function getAuthToken(role: 'student' | 'company' | 'admin'): string | null {
+  return localStorage.getItem(role === 'admin' ? ADMIN_TOKEN_KEY : TOKEN_KEY);
+}
 
 export function resolveAssetUrl(src?: string): string {
   if (!src) return '';
@@ -36,7 +40,7 @@ export function resolveAssetUrl(src?: string): string {
 }
 
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem(isAdminRequest(config.url) ? ADMIN_TOKEN_KEY : TOKEN_KEY);
+  const token = getAuthToken(isAdminRequest(config.url) ? 'admin' : 'student');
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }

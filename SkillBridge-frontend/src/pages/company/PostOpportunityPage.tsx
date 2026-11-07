@@ -37,7 +37,6 @@ export default function PostOpportunityPage() {
   const [salary, setSalary] = useState('BDT 15,000/mo');
   const [openings, setOpenings] = useState(1);
   const [deadline, setDeadline] = useState(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]);
-  const [tagsInput, setTagsInput] = useState('Frontend, Full-time');
   const [applicationEligibility, setApplicationEligibility] = useState<'everyone' | 'required_skills'>('everyone');
 
   const addSkill = () => {
@@ -62,13 +61,6 @@ export default function PostOpportunityPage() {
       .map((s) => s.trim())
       .filter(Boolean);
 
-    const extraTags = tagsInput
-      .split(',')
-      .map((s) => s.trim())
-      .filter(Boolean);
-
-    const tags = Array.from(new Set([...skills, ...extraTags]));
-
     try {
       await companyService.createOpportunity({
         title: title.trim(),
@@ -76,7 +68,7 @@ export default function PostOpportunityPage() {
         description: description.trim(),
         responsibilities,
         requirements,
-        tags,
+        tags: Array.from(new Set(skills.map((skill) => skill.trim()).filter(Boolean))),
         location: location.trim(),
         isRemote,
         salary: salary.trim(),
@@ -213,11 +205,6 @@ export default function PostOpportunityPage() {
                 </Field>
               </div>
             </div>
-          </Card>
-
-          <Card>
-            <CardHeader title="Tags" subtitle="Add perks or highlights (comma separated)" />
-            <Input value={tagsInput} onChange={(e) => setTagsInput(e.target.value)} placeholder="e.g. Remote, Mentorship, Full-time" />
           </Card>
 
           <Card>

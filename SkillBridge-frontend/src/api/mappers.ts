@@ -218,9 +218,10 @@ export function mapConversation(c: BackendConversation, currentUserRole: Role) {
       : imagePath(participantAvatar, 'avatars'),
     participantPath,
     role: roleLabel,
-    last: '',
+    last: c.lastMessage?.content || '',
     time: new Date(c.lastMessageAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-    unread: 0,
+    lastMessageAt: c.lastMessageAt,
+    unread: c.unreadCount || 0,
     online: false,
   };
 }
@@ -246,6 +247,7 @@ export function mapMessage(m: BackendMessage, currentUserRole?: string, currentU
     from: (isMe ? 'me' : 'them') as 'me' | 'them',
     text: m.content,
     time: new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+    createdAt: m.createdAt,
   };
 }
 

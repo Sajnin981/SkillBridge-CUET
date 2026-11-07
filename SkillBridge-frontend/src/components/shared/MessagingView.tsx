@@ -1,10 +1,16 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { Send, Search, ArrowLeft, MessageSquare } from 'lucide-react';
+import { io, type Socket } from 'socket.io-client';
 import { PageContainer } from '@/components/layout/DashboardLayout';
 import { Avatar } from '@/components/ui/Avatar';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/context/AuthContext';
+import { useToast } from '@/components/ui/Toast';
+import { API_ORIGIN, getAuthToken, normalizeError, type BackendMessage } from '@/api/axios';
+import { mapMessage } from '@/api/mappers';
+import { messageService } from '@/services/messageService';
 
 interface Conversation {
   id: string;
@@ -14,6 +20,7 @@ interface Conversation {
   role: string;
   last: string;
   time: string;
+  lastMessageAt: string;
   unread: number;
   online: boolean;
 }
@@ -23,6 +30,7 @@ interface Message {
   from: 'me' | 'them';
   text: string;
   time: string;
+  createdAt?: string;
 }
 
 interface MessagingViewProps {
@@ -31,60 +39,258 @@ interface MessagingViewProps {
   emptyDescription: string;
   conversations: Conversation[];
   messagesByConv: Record<string, Message[]>;
-  onSendMessage?: (conversationId: string, text: string) => Promise<void>;
+  onSendMessage?: (conversationId: string, text: string) => Promise<BackendMessage>;
   initialConversationId?: string | null;
   headerAction?: React.ReactNode;
   topContent?: React.ReactNode;
 }
 
+interface MessageEvent {
+  conversationId: string;
+  message: BackendMessage;
+}
+
+function mergeMessages(current: Message[], incoming: Message): Message[] {
+  const byId = new Map(current.map((message) => [message.id, message]));
+  byId.set(incoming.id, incoming);
+  return [...byId.values()].sort((a, b) => {
+    const aTime = a.createdAt ? Date.parse(a.createdAt) : 0;
+    const bTime = b.createdAt ? Date.parse(b.createdAt) : 0;
+    return aTime - bTime || a.id.localeCompare(b.id);
+  });
+}
+
 export function MessagingView({ title, emptyTitle, emptyDescription, conversations, messagesByConv, onSendMessage, initialConversationId, headerAction, topContent }: MessagingViewProps) {
+  const { user } = useAuth();
+  const { toast } = useToast();
   const [activeId, setActiveId] = useState<string | null>(initialConversationId && conversations.some((c) => c.id === initialConversationId) ? initialConversationId : conversations[0]?.id ?? null);
-  const [messages, setMessages] = useState<Message[]>(activeId ? messagesByConv[activeId] ?? [] : []);
+  const [conversationItems, setConversationItems] = useState(conversations);
+  const [messagesByConversation, setMessagesByConversation] = useState(messagesByConv);
   const [input, setInput] = useState('');
   const [search, setSearch] = useState('');
   const [mobileChat, setMobileChat] = useState(false);
+  const [sending, setSending] = useState(false);
+  const [liveStatus, setLiveStatus] = useState<'connecting' | 'connected' | 'disconnected' | 'unavailable' | 'sync-error'>('connecting');
   const endRef = useRef<HTMLDivElement>(null);
+  const socketRef = useRef<Socket | null>(null);
+  const conversationItemsRef = useRef(conversationItems);
+  const activeIdRef = useRef(activeId);
+  const mobileChatRef = useRef(mobileChat);
+  const messagesByConversationRef = useRef(messagesByConversation);
+  const previousConversationRef = useRef<string | null>(null);
+  conversationItemsRef.current = conversationItems;
+  activeIdRef.current = activeId;
+  mobileChatRef.current = mobileChat;
+  messagesByConversationRef.current = messagesByConversation;
 
   useEffect(() => {
-    if (!activeId && conversations.length > 0) {
-      setActiveId(conversations[0].id);
+    setConversationItems((current) => conversations.map((conversation) => {
+      const previous = current.find((item) => item.id === conversation.id);
+      return previous && Date.parse(previous.lastMessageAt) > Date.parse(conversation.lastMessageAt) ? previous : conversation;
+    }));
+  }, [conversations]);
+
+  useEffect(() => {
+    setMessagesByConversation((current) => {
+      const merged = { ...current };
+      Object.entries(messagesByConv).forEach(([conversationId, messages]) => {
+        merged[conversationId] = messages.reduce(mergeMessages, current[conversationId] ?? []);
+      });
+      return merged;
+    });
+  }, [messagesByConv]);
+
+  useEffect(() => {
+    if (!activeId && conversationItems.length > 0) {
+      setActiveId(conversationItems[0].id);
     }
-  }, [conversations, activeId]);
+  }, [conversationItems, activeId]);
 
   useEffect(() => {
-    if (initialConversationId && conversations.some((c) => c.id === initialConversationId)) {
+    if (initialConversationId && conversationItems.some((c) => c.id === initialConversationId)) {
       setActiveId(initialConversationId);
+      setMobileChat(true);
     }
-  }, [initialConversationId, conversations]);
+  }, [initialConversationId, conversationItems]);
 
-  useEffect(() => {
-    if (activeId) setMessages(messagesByConv[activeId] ?? []);
-  }, [activeId, messagesByConv]);
+  const activeMessages = useMemo(
+    () => activeId ? messagesByConversation[activeId] ?? [] : [],
+    [activeId, messagesByConversation],
+  );
 
-  useEffect(() => { endRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages]);
+  useEffect(() => { endRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [activeMessages]);
 
-  const active = conversations.find((c) => c.id === activeId);
+  const active = conversationItems.find((c) => c.id === activeId);
 
-  const filteredConvs = conversations.filter((c) =>
+  const filteredConvs = conversationItems.filter((c) =>
     !search || c.name.toLowerCase().includes(search.toLowerCase()) || c.role.toLowerCase().includes(search.toLowerCase())
   );
+
+  useEffect(() => {
+    const userId = user?.id;
+    const userRole = user?.role;
+    if (!userId || !userRole) return;
+
+    const token = getAuthToken(userRole);
+    if (!token) {
+      setLiveStatus('unavailable');
+      return;
+    }
+
+    const socket = io(API_ORIGIN, { auth: { token } });
+    socketRef.current = socket;
+
+    const applyMessage = (event: MessageEvent, updatePreview: boolean) => {
+      if (!event?.conversationId || event.message?.conversation !== event.conversationId) return;
+      const mapped = mapMessage(event.message, userRole, userId) as Message;
+      setMessagesByConversation((current) => ({
+        ...current,
+        [event.conversationId]: mergeMessages(current[event.conversationId] ?? [], mapped),
+      }));
+
+      if (updatePreview) {
+        if (!conversationItemsRef.current.some((conversation) => conversation.id === event.conversationId)) {
+          void messageService.getConversations(userRole).then((latestConversations) => {
+            setConversationItems((current) => latestConversations.map((conversation) => {
+              const previous = current.find((item) => item.id === conversation.id);
+              return previous && Date.parse(previous.lastMessageAt) > Date.parse(conversation.lastMessageAt) ? previous : conversation;
+            }));
+          }).catch(() => setLiveStatus('sync-error'));
+        }
+        setConversationItems((current) => current
+          .map((conversation) => conversation.id === event.conversationId
+            ? {
+              ...conversation,
+              last: event.message.content,
+              time: new Date(event.message.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+              lastMessageAt: event.message.createdAt,
+              unread: mapped.from === 'them'
+                ? (activeIdRef.current === event.conversationId &&
+                  (window.matchMedia('(min-width: 1024px)').matches || mobileChatRef.current)
+                  ? 0
+                  : conversation.unread + 1)
+                : conversation.unread,
+            }
+            : conversation)
+          .sort((a, b) => Date.parse(b.lastMessageAt) - Date.parse(a.lastMessageAt)));
+
+        if (
+          mapped.from === 'them' &&
+          activeIdRef.current === event.conversationId &&
+          (window.matchMedia('(min-width: 1024px)').matches || mobileChatRef.current)
+        ) {
+          messageService.markRead(event.conversationId).catch(() => setLiveStatus('sync-error'));
+        }
+      }
+    };
+
+    const recoverFromRest = async () => {
+      try {
+        const latestConversations = await messageService.getConversations(userRole);
+        setConversationItems((current) => latestConversations.map((conversation) => {
+          const previous = current.find((item) => item.id === conversation.id);
+          return previous && Date.parse(previous.lastMessageAt) > Date.parse(conversation.lastMessageAt) ? previous : conversation;
+        }));
+
+        const conversationId = activeIdRef.current;
+        if (conversationId) {
+          const currentMessages = messagesByConversationRef.current[conversationId] ?? [];
+          const lastMessage = currentMessages[currentMessages.length - 1];
+          const history = await messageService.getMessagesSince(conversationId, userRole, userId, lastMessage?.createdAt);
+          setMessagesByConversation((current) => ({
+            ...current,
+            [conversationId]: history.reduce(mergeMessages, current[conversationId] ?? []),
+          }));
+        }
+        setLiveStatus('connected');
+      } catch {
+        setLiveStatus('sync-error');
+      }
+    };
+
+    const joinActiveConversation = (conversationId: string) => {
+      socket.emit('conversation:join', conversationId, (result: { ok: boolean }) => {
+        if (!result?.ok) setLiveStatus('unavailable');
+      });
+    };
+
+    socket.on('connect', () => {
+      setLiveStatus('connected');
+      const conversationId = activeIdRef.current;
+      if (conversationId) joinActiveConversation(conversationId);
+      void recoverFromRest();
+    });
+    socket.on('disconnect', () => setLiveStatus('disconnected'));
+    socket.on('connect_error', () => setLiveStatus('unavailable'));
+    socket.on('message:new', (event: MessageEvent) => applyMessage(event, false));
+    socket.on('conversation:activity', (event: MessageEvent) => applyMessage(event, true));
+
+    return () => {
+      const conversationId = activeIdRef.current;
+      if (conversationId) socket.emit('conversation:leave', conversationId);
+      socket.off('connect');
+      socket.off('disconnect');
+      socket.off('connect_error');
+      socket.off('message:new');
+      socket.off('conversation:activity');
+      socket.disconnect();
+      socketRef.current = null;
+    };
+  }, [user?.id, user?.role]);
+
+  useEffect(() => {
+    const previousConversationId = previousConversationRef.current;
+    const socket = socketRef.current;
+    if (previousConversationId && previousConversationId !== activeId) {
+      socket?.emit('conversation:leave', previousConversationId);
+    }
+    previousConversationRef.current = activeId;
+    if (!activeId || !(window.matchMedia('(min-width: 1024px)').matches || mobileChat)) return;
+
+    if (socket?.connected) {
+      socket.emit('conversation:join', activeId, (result: { ok: boolean }) => {
+        if (!result?.ok) setLiveStatus('unavailable');
+      });
+    }
+    messageService.markRead(activeId).then(() => {
+      setConversationItems((current) => current.map((conversation) =>
+        conversation.id === activeId ? { ...conversation, unread: 0 } : conversation
+      ));
+    }).catch(() => setLiveStatus('sync-error'));
+  }, [activeId, mobileChat]);
 
   const send = async (e: React.FormEvent) => {
     e.preventDefault();
     const text = input.trim();
-    if (!text || !activeId) return;
-    setInput('');
-    setMessages((prev) => [...prev, { id: Math.random().toString(36).slice(2), from: 'me', text, time: 'Now' }]);
-    if (onSendMessage) {
-      try {
-        await onSendMessage(activeId, text);
-      } catch {
-        // Handled in parent
-      }
+    if (!text || !activeId || !onSendMessage || sending) return;
+    setSending(true);
+    try {
+      const savedMessage = await onSendMessage(activeId, text);
+      const mapped = mapMessage(savedMessage, user?.role, user?.id) as Message;
+      setMessagesByConversation((current) => ({
+        ...current,
+        [activeId]: mergeMessages(current[activeId] ?? [], mapped),
+      }));
+      setConversationItems((current) => current
+        .map((conversation) => conversation.id === activeId
+          ? {
+            ...conversation,
+            last: savedMessage.content,
+            time: new Date(savedMessage.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            lastMessageAt: savedMessage.createdAt,
+            unread: 0,
+          }
+          : conversation)
+        .sort((a, b) => Date.parse(b.lastMessageAt) - Date.parse(a.lastMessageAt)));
+      setInput('');
+    } catch (err) {
+      toast({ title: 'Message not sent', description: normalizeError(err).message, variant: 'error' });
+    } finally {
+      setSending(false);
     }
   };
 
-  if (conversations.length === 0) {
+  if (conversationItems.length === 0) {
     return (
       <PageContainer className="max-w-none">
         {topContent}
@@ -141,15 +347,16 @@ export function MessagingView({ title, emptyTitle, emptyDescription, conversatio
                 </div>
                 <div className="min-w-0 flex-1">
                   {active.participantPath ? <Link to={active.participantPath} className="block truncate text-sm font-semibold text-ink-800 hover:text-brand-700">{active.name}</Link> : <p className="truncate text-sm font-semibold text-ink-800">{active.name}</p>}
-                  <p className="text-xs text-ink-400">{active.online ? 'Online now' : 'Offline'} · {active.role}</p>
+                  <p className="text-xs text-ink-400">{active.online ? `Online now · ${active.role}` : active.role}</p>
                 </div>
               </div>
 
               <div className="min-h-0 flex-1 space-y-3 overflow-y-auto bg-ink-50 p-4 scrollbar-thin">
-                {messages.length === 0 ? (
+                {liveStatus !== 'connected' && <p className="text-center text-xs text-ink-400">{liveStatus === 'connecting' ? 'Connecting to live messages…' : liveStatus === 'disconnected' ? 'Reconnecting to live messages…' : liveStatus === 'sync-error' ? 'Could not sync message history.' : 'Live updates are unavailable.'}</p>}
+                {activeMessages.length === 0 ? (
                   <div className="flex h-full items-center justify-center text-sm text-ink-400">No messages yet. Say hello!</div>
                 ) : (
-                  messages.map((m) => (
+                  activeMessages.map((m) => (
                     <div key={m.id} className={cn('flex', m.from === 'me' ? 'justify-end' : 'justify-start')}>
                       <div className={cn('max-w-[75%] rounded-2xl px-4 py-2.5 text-sm', m.from === 'me' ? 'rounded-br-md bg-brand-600 text-white' : 'rounded-bl-md bg-white text-ink-700 ring-1 ring-ink-200/60')}>
                         <p>{m.text}</p>
@@ -163,7 +370,7 @@ export function MessagingView({ title, emptyTitle, emptyDescription, conversatio
 
               <form onSubmit={send} className="flex items-center gap-2 border-t border-ink-100 p-3">
                 <input value={input} onChange={(e) => setInput(e.target.value)} placeholder="Type a message…" className="input flex-1" />
-                <button type="submit" className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-600 text-white transition hover:bg-brand-700"><Send className="h-4 w-4" /></button>
+                <button type="submit" disabled={sending} className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-600 text-white transition hover:bg-brand-700 disabled:opacity-50"><Send className="h-4 w-4" /></button>
               </form>
             </>
           )}

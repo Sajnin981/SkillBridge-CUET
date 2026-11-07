@@ -18,8 +18,9 @@ import { api } from '@/api/axios';
 import type { StudentProfile } from '@/lib/types';
 
 export default function StudentProfilePage() {
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const focusPostId = searchParams.get('postId') || undefined;
+  const editSection = searchParams.get('editSection');
   const { user } = useAuth();
   const { toast } = useToast();
   const [editOpen, setEditOpen] = useState(false);
@@ -29,6 +30,7 @@ export default function StudentProfilePage() {
   const [editForm, setEditForm] = useState({ bio: '', phone: '', skills: '', linkedin: '', github: '', facebook: '', portfolio: '', website: '' });
   const fileRef = useRef<HTMLInputElement>(null);
   const avatarRef = useRef<HTMLInputElement>(null);
+  const skillsFieldRef = useRef<HTMLDivElement>(null);
   const [uploading, setUploading] = useState(false);
   const [avatarUploading, setAvatarUploading] = useState(false);
 
@@ -74,6 +76,35 @@ export default function StudentProfilePage() {
     }).catch(() => setLoading(false));
   }, []);
 
+  useEffect(() => {
+    if (!loading && editSection === 'skills') setEditOpen(true);
+  }, [editSection, loading]);
+
+  useEffect(() => {
+    if (!editOpen || editSection !== 'skills') return;
+    const frame = window.requestAnimationFrame(() => {
+      skillsFieldRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      document.getElementById('student-profile-skills')?.focus();
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [editOpen, editSection]);
+
+  const openSkillsEditor = () => {
+    const next = new URLSearchParams(searchParams);
+    next.set('editSection', 'skills');
+    setSearchParams(next, { replace: true });
+    setEditOpen(true);
+  };
+
+  const closeEditor = () => {
+    setEditOpen(false);
+    if (searchParams.has('editSection')) {
+      const next = new URLSearchParams(searchParams);
+      next.delete('editSection');
+      setSearchParams(next, { replace: true });
+    }
+  };
+
   const handleSave = () => {
     setSaving(true);
     const skills = editForm.skills.split(',').map((s) => s.trim()).filter(Boolean);
@@ -91,7 +122,7 @@ export default function StudentProfilePage() {
     }).then((p) => {
       setProfile(p);
       setSaving(false);
-      setEditOpen(false);
+      closeEditor();
       toast({ title: 'Profile updated', variant: 'success' });
     }).catch(() => {
       setSaving(false);
@@ -226,7 +257,7 @@ export default function StudentProfilePage() {
 
         <div className="space-y-6">
           <Card>
-            <CardHeader title="Skills" action={<Button variant="outline" size="sm"><Plus className="h-3.5 w-3.5" />Add</Button>} />
+            <CardHeader title="Skills" action={<Button variant="outline" size="sm" onClick={openSkillsEditor}><Plus className="h-3.5 w-3.5" />Add</Button>} />
             {profile?.skills && profile.skills.length > 0 ? (
               <div className="flex flex-wrap gap-2">
                 {profile.skills.map((s, i) => (
@@ -259,8 +290,8 @@ export default function StudentProfilePage() {
         </div>
       </div>
 
-      <Modal open={editOpen} onClose={() => setEditOpen(false)} title="Edit profile" size="lg"
-        footer={<><Button variant="outline" onClick={() => setEditOpen(false)}>Cancel</Button><Button onClick={handleSave} disabled={saving}>{saving ? 'Saving…' : 'Save changes'}</Button></>}>
+      <Modal open={editOpen} onClose={closeEditor} title="Edit profile" size="lg"
+        footer={<><Button variant="outline" onClick={closeEditor}>Cancel</Button><Button onClick={handleSave} disabled={saving}>{saving ? 'Saving…' : 'Save changes'}</Button></>}>
         <div className="space-y-4">
           <div className="flex items-center gap-4">
             <Avatar name={profile?.name ?? user?.name ?? 'U'} src={profile?.avatar} size="xl" />
@@ -279,7 +310,11 @@ export default function StudentProfilePage() {
             <Field label="Batch"><Input defaultValue={profile?.batch} disabled /></Field>
             <Field label="Phone"><Input value={editForm.phone} onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })} /></Field>
           </div>
-          <Field label="Skills (comma-separated)"><Input value={editForm.skills} onChange={(e) => setEditForm({ ...editForm, skills: e.target.value })} placeholder="React, Node.js, Python" /></Field>
+          <div ref={skillsFieldRef}>
+            <Field label="Skills (comma-separated)">
+              <Input id="student-profile-skills" value={editForm.skills} onChange={(e) => setEditForm({ ...editForm, skills: e.target.value })} placeholder="React, Node.js, Python" />
+            </Field>
+          </div>
           <Field label="Bio"><Textarea value={editForm.bio} onChange={(e) => setEditForm({ ...editForm, bio: e.target.value })} placeholder="Tell recruiters about yourself…" /></Field>
           <div className="grid gap-4 sm:grid-cols-2">
             <Field label="LinkedIn URL"><Input value={editForm.linkedin} onChange={(e) => setEditForm({ ...editForm, linkedin: e.target.value })} placeholder="https://linkedin.com/in/username" /></Field>

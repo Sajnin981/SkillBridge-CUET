@@ -6,6 +6,7 @@ const Admin = require("../../models/Admin");
 const AppError = require("../../utils/AppError");
 const { success } = require("../../utils/apiResponse");
 const createNotification = require("../../utils/createNotification");
+const { userRoom, conversationRoom } = require("../../services/socketServer");
 
 const isStudent = (req) => req.userRole === "student";
 const isCompany = (req) => req.userRole === "company";
@@ -23,12 +24,42 @@ exports.listConversations = async (req, res, next) => {
         ? { company: req.user._id }
         : { admin: req.user._id };
 
-    const items = await Conversation.find(filter)
+    const conversations = await Conversation.find(filter)
       .populate("student", "fullName avatarUrl")
       .populate("company", "companyName logoUrl")
       .populate("admin", "name email")
       .populate("opportunity", "title type")
       .sort("-lastMessageAt");
+    const activity = conversations.length
+      ? await Message.aggregate([
+        { $match: { conversation: { $in: conversations.map((item) => item._id) } } },
+        { $sort: { createdAt: -1, _id: -1 } },
+        {
+          $group: {
+            _id: "$conversation",
+            lastMessage: { $first: "$$ROOT" },
+            unreadCount: {
+              $sum: {
+                $cond: [
+                  { $and: [{ $eq: ["$read", false] }, { $ne: ["$sender", req.user._id] }] },
+                  1,
+                  0,
+                ],
+              },
+            },
+          },
+        },
+      ])
+      : [];
+    const activityByConversation = new Map(activity.map((item) => [item._id.toString(), item]));
+    const items = conversations.map((conversation) => {
+      const latest = activityByConversation.get(conversation._id.toString());
+      return {
+        ...conversation.toObject(),
+        lastMessage: latest?.lastMessage || null,
+        unreadCount: latest?.unreadCount || 0,
+      };
+    });
 
     return success(res, { message: "Conversations", data: { items } });
   } catch (err) {
@@ -115,15 +146,23 @@ exports.listMessages = async (req, res, next) => {
       (isAdmin(req) && conversation.admin?.equals(req.user._id));
     if (!isParticipant) return next(new AppError("Not authorized for this conversation.", 403));
 
-    const { page = 1, limit = 50 } = req.query;
+    const { page = 1, limit = 50, after, sort } = req.query;
     const skip = (Number(page) - 1) * Number(limit);
+    const messageFilter = { conversation: conversation._id };
+    if (after) {
+      const afterDate = new Date(after);
+      if (Number.isNaN(afterDate.getTime())) {
+        return next(new AppError("Invalid message cursor.", 400));
+      }
+      messageFilter.createdAt = { $gte: afterDate };
+    }
 
     const [items, total] = await Promise.all([
-      Message.find({ conversation: conversation._id })
-        .sort("createdAt")
+      Message.find(messageFilter)
+        .sort(sort === "newest" ? { createdAt: -1, _id: -1 } : { createdAt: 1, _id: 1 })
         .skip(skip)
         .limit(Number(limit)),
-      Message.countDocuments({ conversation: conversation._id }),
+      Message.countDocuments(messageFilter),
     ]);
 
     return success(res, {
@@ -166,29 +205,51 @@ exports.sendMessage = async (req, res, next) => {
       (isAdmin(req) && conversation.admin?.equals(req.user._id));
     if (!isParticipant) return next(new AppError("Not authorized for this conversation.", 403));
 
+    const senderModel = isStudent(req) ? "Student" : isCompany(req) ? "Company" : "Admin";
+    const recipient = isStudent(req)
+      ? (conversation.company ? { model: "Company", id: conversation.company, role: "company" } : { model: "Admin", id: conversation.admin, role: "admin" })
+      : isCompany(req)
+        ? (conversation.student ? { model: "Student", id: conversation.student, role: "student" } : { model: "Admin", id: conversation.admin, role: "admin" })
+        : conversation.student
+          ? { model: "Student", id: conversation.student, role: "student" }
+          : { model: "Company", id: conversation.company, role: "company" };
+
+    if (!recipient.id) return next(new AppError("Conversation recipient not found.", 500));
+
     const message = await Message.create({
       conversation: conversation._id,
       sender: req.user._id,
-      senderModel: isStudent(req) ? "Student" : isCompany(req) ? "Company" : "Admin",
+      senderModel,
       content: content.trim(),
     });
 
-    conversation.lastMessageAt = new Date();
+    conversation.lastMessageAt = message.createdAt;
     await conversation.save();
-    const recipientModel = isAdmin(req) ? (conversation.student ? "Student" : "Company") : "Admin";
-    const recipient = isAdmin(req) ? (conversation.student || conversation.company) : conversation.admin;
-    if (!recipient) {
-      return next(new AppError("Conversation recipient not found.", 500));
+
+    const messageEvent = { conversationId: conversation._id.toString(), message: message.toObject() };
+    const io = req.app.get("io");
+    if (io) {
+      io.to(conversationRoom(conversation._id.toString())).emit("message:new", messageEvent);
+      const senderRole = req.userRole;
+      io.to(userRoom(recipient.role, recipient.id.toString())).emit("conversation:activity", messageEvent);
+      io.to(userRoom(senderRole, req.user._id.toString())).emit("conversation:activity", messageEvent);
     }
+
     const senderName = req.user.fullName || req.user.companyName || req.user.name || "Someone";
-    await createNotification({
-      recipient,
-      recipientModel,
-      title: "New message",
-      body: `${senderName} sent you a message.`,
-      type: "message",
-      link: `/${recipientModel === "Student" ? "student" : recipientModel === "Company" ? "company" : "admin"}/messages?conversationId=${conversation._id}`,
-    });
+    try {
+      await createNotification({
+        recipient: recipient.id,
+        recipientModel: recipient.model,
+        actor: req.user._id,
+        actorModel: senderModel,
+        title: "New message",
+        body: `${senderName} sent you a message.`,
+        type: "message",
+        link: `/${recipient.role}/messages?conversationId=${conversation._id}`,
+      });
+    } catch (err) {
+      console.error("Could not create a message notification:", err);
+    }
 
     return success(res, {
       statusCode: 201,
