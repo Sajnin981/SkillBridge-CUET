@@ -208,17 +208,6 @@ export default function StudentProfilePage() {
             )}
           </Card>
 
-          {user && (
-            <PostFeed
-              myId={user.id}
-              myRole="student"
-              authorId={user.id}
-              authorType="student"
-              canCreate
-              focusPostId={focusPostId}
-            />
-          )}
-
           <Card>
             <CardHeader title="Education" />
             {profile?.education && profile.education.length > 0 ? (
@@ -253,6 +242,17 @@ export default function StudentProfilePage() {
               <EmptyState icon={<Briefcase className="h-6 w-6" />} title="No experience added" description="Add your work or internship experience." />
             )}
           </Card>
+
+          {user && (
+            <PostFeed
+              myId={user.id}
+              myRole="student"
+              authorId={user.id}
+              authorType="student"
+              canCreate
+              focusPostId={focusPostId}
+            />
+          )}
         </div>
 
         <div className="space-y-6">

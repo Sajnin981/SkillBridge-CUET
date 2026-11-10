@@ -15,6 +15,13 @@ import { aiService } from '@/services/aiService';
 import { notificationService } from '@/services/notificationService';
 import type { Opportunity, Notification } from '@/lib/types';
 
+const applicationStatusTone: Record<string, 'neutral' | 'success' | 'danger'> = {
+  submitted: 'neutral',
+  shortlisted: 'success',
+  rejected: 'danger',
+  withdrawn: 'neutral',
+};
+
 const quickActions = [
   { label: 'Browse Opportunities', icon: Briefcase, to: '/student/opportunities', tone: 'bg-brand-50 text-brand-600' },
   { label: 'Resume Builder', icon: Upload, to: '/student/resume', tone: 'bg-accent-50 text-accent-600' },
@@ -138,8 +145,10 @@ export default function StudentDashboard() {
               <div className="space-y-3">
                 {applications.map((a) => (
                   <div key={a.id} className="rounded-xl border border-ink-100 p-3.5">
-                    <p className="text-sm font-semibold text-ink-800">Application #{a.id}</p>
-                    <p className="text-xs text-ink-400">{a.stage}</p>
+                    <div className="flex items-start justify-between gap-3">
+                      <p className="text-sm font-semibold text-ink-800">{a.stage}</p>
+                      <Badge tone={applicationStatusTone[a.status] ?? 'neutral'}>{a.status}</Badge>
+                    </div>
                   </div>
                 ))}
               </div>
