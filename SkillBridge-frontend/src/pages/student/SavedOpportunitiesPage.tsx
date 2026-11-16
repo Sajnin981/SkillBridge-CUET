@@ -8,13 +8,17 @@ import { Button } from '@/components/ui/Button';
 import { Link } from 'react-router-dom';
 import type { Opportunity } from '@/lib/types';
 import { opportunityService } from '@/services/opportunityService';
+import { normalizeError } from '@/api/axios';
 
 export default function SavedOpportunitiesPage() {
   const [saved, setSaved] = useState<Opportunity[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
   useEffect(() => {
-    opportunityService.getSaved().then((s) => { setSaved(s); setLoading(false); });
+    opportunityService.getSaved().then(setSaved).catch((err: unknown) => {
+      setError(normalizeError(err).message);
+    }).finally(() => setLoading(false));
   }, []);
 
   return (
@@ -25,11 +29,15 @@ export default function SavedOpportunitiesPage() {
       </div>
       {loading ? (
         <div className="grid gap-4 sm:grid-cols-2">{[...Array(2)].map((_, i) => <SkeletonCard key={i} />)}</div>
+      ) : error ? (
+        <div className="card p-6 text-center text-sm text-danger-600">Could not load saved opportunities: {error}</div>
       ) : saved.length === 0 ? (
         <div className="card"><EmptyState icon={<Bookmark className="h-7 w-7" />} title="No saved opportunities" description="Bookmark opportunities to find them quickly later." action={<Link to="/student/opportunities"><Button>Browse Opportunities</Button></Link>} /></div>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2">
-          {saved.map((o) => <OpportunityCard key={o.id} opportunity={o} />)}
+          {saved.map((o) => <OpportunityCard key={o.id} opportunity={o} onSave={(id, isSaved) => {
+            if (!isSaved) setSaved((current) => current.filter((item) => item.id !== id));
+          }} />)}
         </div>
       )}
     </PageContainer>

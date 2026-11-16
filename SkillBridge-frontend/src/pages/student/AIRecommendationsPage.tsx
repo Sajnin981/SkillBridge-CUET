@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Sparkles, ArrowRight, Target, AlertCircle, Award } from 'lucide-react';
+import { Sparkles, ArrowRight, AlertCircle, Award } from 'lucide-react';
 import { PageContainer } from '@/components/layout/DashboardLayout';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -48,19 +48,14 @@ export default function AIRecommendationsPage() {
   return (
     <PageContainer>
       <div className="mb-6">
-        <h2 className="flex items-center gap-2 font-display text-2xl font-bold text-ink-800">AI Recommendations <Badge tone="brand"><Sparkles className="h-3 w-3" />AI</Badge></h2>
+        <h2 className="font-display text-2xl font-bold text-ink-800">Recommendation</h2>
         <p className="mt-1 text-sm text-ink-500">Opportunities matched to your skills and profile — ranked by match score.</p>
-      </div>
-
-      <div className="mb-6 flex flex-wrap items-center gap-3 rounded-xl bg-brand-50 p-4">
-        <Target className="h-5 w-5 text-brand-600" />
-        <p className="text-sm text-brand-700"><span className="font-semibold">How it works:</span> Our AI analyzes your profile and matches it against opportunities using skills, experience, and preferences.</p>
       </div>
 
       {loading ? (
         <div className="space-y-4">{[...Array(2)].map((_, i) => <SkeletonCard key={i} />)}</div>
       ) : enriched.length === 0 ? (
-        <div className="card"><EmptyState icon={<Award className="h-7 w-7" />} title="No recommendations yet" description="Upload your CV and add skills to your profile to unlock AI-powered opportunity recommendations." action={<Link to="/student/resume"><Button>Upload Resume</Button></Link>} /></div>
+        <div className="card"><EmptyState icon={<Award className="h-7 w-7" />} title="No recommendations yet" description="Complete your profile and add skills to receive relevant opportunity recommendations." action={<Link to="/student/profile"><Button>Complete Profile</Button></Link>} /></div>
       ) : (
         <div className="space-y-4">
           {enriched.map((r) => (

@@ -236,7 +236,7 @@ export default function RegisterPage() {
             </div>
             <div>
               <label className="block text-sm font-medium text-ink-700">Resume / CV (Optional)</label>
-              <p className="text-xs text-ink-500 mb-2">Upload your current resume for instant AI analysis and employer matching</p>
+              <p className="text-xs text-ink-500 mb-2">Upload your current resume so employers can review your experience</p>
               <input
                 type="file"
                 accept=".pdf"

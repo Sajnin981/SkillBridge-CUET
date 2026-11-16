@@ -10,6 +10,9 @@ import { SkeletonCard } from '@/components/ui/Skeleton';
 import { Button } from '@/components/ui/Button';
 import type { Opportunity } from '@/lib/types';
 import { opportunityService } from '@/services/opportunityService';
+import { studentService } from '@/services/studentService';
+import { useToast } from '@/components/ui/Toast';
+import { normalizeError } from '@/api/axios';
 import { cn } from '@/lib/utils';
 
 const sortOptions = [
@@ -27,12 +30,14 @@ const backendTypeByLabel: Partial<Record<Opportunity['type'], string[]>> = {
 };
 
 export default function OpportunityListingPage() {
+  const { toast } = useToast();
   const [view, setView] = useState<'grid' | 'list'>('grid');
   const [search, setSearch] = useState('');
   const [sort, setSort] = useState('recent');
   const [page, setPage] = useState(1);
   const [filters, setFilters] = useState<FilterState>({ types: [], remoteOnly: false, location: '', skills: [], experience: 'Any', salaryMin: 0 });
   const [opportunities, setOpportunities] = useState<Opportunity[]>([]);
+  const [savedOpportunityIds, setSavedOpportunityIds] = useState<Set<string>>(new Set());
   const [locations, setLocations] = useState<string[]>([]);
   const [availableSkills, setAvailableSkills] = useState<string[]>([]);
   const [filterOptionsError, setFilterOptionsError] = useState(false);
@@ -40,6 +45,20 @@ export default function OpportunityListingPage() {
   const [totalPages, setTotalPages] = useState(1);
   const [error, setError] = useState(false);
   const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    studentService.getSavedOpportunities().then((items) => {
+      setSavedOpportunityIds(new Set(items.flatMap((item) => {
+        if (typeof item === 'string') return [item];
+        if (!item || typeof item !== 'object') return [];
+        const opportunity = item as { _id?: string; id?: string };
+        return [opportunity._id || opportunity.id].filter((id): id is string => Boolean(id));
+      })));
+    }).catch((error: unknown) => {
+      const apiError = normalizeError(error);
+      toast({ title: 'Could not load saved opportunities', description: apiError.message, variant: 'error' });
+    });
+  }, [toast]);
 
   useEffect(() => {
     opportunityService.getFilterOptions().then((options) => {
@@ -62,12 +81,13 @@ export default function OpportunityListingPage() {
       location: filters.location || undefined,
       isRemote: filters.remoteOnly || undefined,
       skills: filters.skills,
+      salaryMin: filters.salaryMin || undefined,
       page,
       limit: 6,
       sort: sort === 'deadline' ? 'deadline' : sort === 'applicants' ? 'applicants' : '-createdAt',
     }).then((result) => {
       if (!active) return;
-      setOpportunities(result.items);
+      setOpportunities(result.items.map((item) => ({ ...item, saved: savedOpportunityIds.has(item.id) })));
       setTotalCount(result.pagination.total);
       setTotalPages(result.pagination.totalPages);
     }).catch(() => {
@@ -80,7 +100,7 @@ export default function OpportunityListingPage() {
       if (active) setLoading(false);
     });
     return () => { active = false; };
-  }, [filters, page, search, sort]);
+  }, [filters, page, search, sort, savedOpportunityIds]);
 
   return (
     <PageContainer>
@@ -107,7 +127,7 @@ export default function OpportunityListingPage() {
         </div>
       </div>
 
-      {(filters.types.length > 0 || filters.remoteOnly || filters.location || filters.skills.length > 0) && (
+      {(filters.types.length > 0 || filters.remoteOnly || filters.location || filters.skills.length > 0 || filters.salaryMin > 0) && (
         <div className="mb-4 flex flex-wrap items-center gap-2">
           {filters.types.map((t) => (
             <button key={t} onClick={() => { setFilters({ ...filters, types: filters.types.filter((x) => x !== t) }); setPage(1); }} className="chip bg-brand-50 text-brand-700 ring-1 ring-brand-200/60">
@@ -121,6 +141,7 @@ export default function OpportunityListingPage() {
               {skill}<X className="h-3 w-3" />
             </button>
           ))}
+          {filters.salaryMin > 0 && <button onClick={() => { setFilters({ ...filters, salaryMin: 0 }); setPage(1); }} className="chip bg-brand-50 text-brand-700 ring-1 ring-brand-200/60">Min. BDT {filters.salaryMin.toLocaleString()}<X className="h-3 w-3" /></button>}
         </div>
       )}
 
@@ -137,7 +158,14 @@ export default function OpportunityListingPage() {
           ) : (
             <>
               <div className={cn(view === 'grid' ? 'grid gap-4 sm:grid-cols-2' : 'space-y-4')}>
-                {opportunities.map((o) => <OpportunityCard key={o.id} opportunity={o} view={view} />)}
+                {opportunities.map((o) => <OpportunityCard key={o.id} opportunity={o} view={view} onSave={(id, saved) => {
+                  setSavedOpportunityIds((current) => {
+                    const next = new Set(current);
+                    if (saved) next.add(id);
+                    else next.delete(id);
+                    return next;
+                  });
+                }} />)}
               </div>
               <div className="mt-8"><Pagination page={page} totalPages={totalPages} onChange={setPage} /></div>
             </>

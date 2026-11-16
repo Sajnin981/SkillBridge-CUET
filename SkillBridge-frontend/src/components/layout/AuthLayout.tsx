@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import { GraduationCap, ArrowLeft, Sparkles, CheckCircle2 } from 'lucide-react';
 import type { ReactNode } from 'react';
 
-const benefits = ['Verified CUET community', 'AI-powered matching', 'Free for students', 'Direct recruiter access'];
+const benefits = ['Verified CUET community', 'Relevant opportunity recommendations', 'Free for students', 'Direct recruiter access'];
 
 export function AuthLayout({ children, title, subtitle, side = 'student' }: { children: ReactNode; title: string; subtitle: string; side?: 'student' | 'company' }) {
   return (
@@ -47,7 +47,7 @@ export function AuthLayout({ children, title, subtitle, side = 'student' }: { ch
           <p className="mt-4 max-w-md text-brand-100">
             {side === 'student'
               ? 'Join thousands of CUET students finding internships, jobs, research, and more — all in one place.'
-              : 'Post opportunities, get AI-ranked candidates, and hire the best CUET has to offer.'}
+              : 'Post opportunities, manage applicants, and hire the best CUET has to offer.'}
           </p>
           <ul className="mt-8 space-y-3.5">
             {benefits.map((b) => (

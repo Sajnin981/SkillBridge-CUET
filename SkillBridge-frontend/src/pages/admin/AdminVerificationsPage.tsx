@@ -11,6 +11,7 @@ import { useToast } from '@/components/ui/Toast';
 import { adminService } from '@/services/adminService';
 import { api, normalizeError } from '@/api/axios';
 import type { BackendCompany, BackendStudent } from '@/api/types';
+import { useSearchParams } from 'react-router-dom';
 
 type VerificationRole = 'student' | 'company';
 
@@ -42,10 +43,16 @@ async function openDocument(filePath: string) {
 
 export default function AdminVerificationsPage() {
   const { toast } = useToast();
-  const [role, setRole] = useState<VerificationRole>('company');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const roleFromUrl = searchParams.get('role') === 'student' ? 'student' : 'company';
+  const [role, setRole] = useState<VerificationRole>(roleFromUrl);
   const [list, setList] = useState<VerificationItem[]>([]);
   const [selected, setSelected] = useState<VerificationItem | null>(null);
   const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    setRole(roleFromUrl);
+  }, [roleFromUrl]);
 
   useEffect(() => {
     setLoading(true);
@@ -91,7 +98,7 @@ export default function AdminVerificationsPage() {
 
       <div className="mb-6 flex gap-2 rounded-xl bg-ink-100 p-1 sm:w-fit">
         {(['company', 'student'] as const).map((itemRole) => (
-          <button key={itemRole} type="button" onClick={() => setRole(itemRole)} className={`rounded-lg px-4 py-2 text-sm font-medium capitalize transition ${role === itemRole ? 'bg-white text-brand-700 shadow-sm' : 'text-ink-500'}`}>
+          <button key={itemRole} type="button" onClick={() => { setRole(itemRole); setSearchParams({ role: itemRole }); }} className={`rounded-lg px-4 py-2 text-sm font-medium capitalize transition ${role === itemRole ? 'bg-white text-brand-700 shadow-sm' : 'text-ink-500'}`}>
             {itemRole} verifications
           </button>
         ))}

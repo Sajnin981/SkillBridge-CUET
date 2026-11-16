@@ -102,13 +102,21 @@ export default function OpportunityDetailsPage() {
         setSaved(false);
         setTogglingSave(false);
         toast({ title: 'Removed from saved', variant: 'info' });
-      }).catch(() => setTogglingSave(false));
+      }).catch((error: unknown) => {
+        setTogglingSave(false);
+        const apiError = normalizeError(error);
+        toast({ title: 'Could not update saved opportunities', description: apiError.message, variant: 'error' });
+      });
     } else {
       studentService.saveOpportunity(id).then(() => {
         setSaved(true);
         setTogglingSave(false);
         toast({ title: 'Saved!', variant: 'success' });
-      }).catch(() => setTogglingSave(false));
+      }).catch((error: unknown) => {
+        setTogglingSave(false);
+        const apiError = normalizeError(error);
+        toast({ title: 'Could not update saved opportunities', description: apiError.message, variant: 'error' });
+      });
     }
   };
 

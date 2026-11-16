@@ -128,7 +128,6 @@ export default function ApplicantsPage() {
           <h2 className="font-display text-2xl font-bold text-ink-800">Applicants</h2>
           <p className="mt-1 text-sm text-ink-500">{loading ? 'Loading…' : `${filtered.length} candidates`}</p>
         </div>
-        <Badge tone="brand"><Sparkles className="h-3 w-3" />AI Ranked</Badge>
       </div>
 
       <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center">
@@ -145,7 +144,7 @@ export default function ApplicantsPage() {
       ) : error ? (
         <div className="card p-6 text-center text-sm text-danger-600">{error}</div>
       ) : filtered.length === 0 ? (
-        <div className="card"><EmptyState icon={<Users className="h-7 w-7" />} title="No applicants yet" description="When students apply to your opportunities, their profiles will appear here with AI match scores." /></div>
+        <div className="card"><EmptyState icon={<Users className="h-7 w-7" />} title="No applicants yet" description="When students apply to your opportunities, their profiles will appear here." /></div>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {filtered.map((a) => {
@@ -180,7 +179,7 @@ export default function ApplicantsPage() {
         {selected && (
           <div className="space-y-5">
             <div className="flex items-center gap-4">
-              <div className="flex h-20 w-20 items-center justify-center rounded-full bg-brand-100 text-2xl font-bold text-brand-700">{selected.avatar}</div>
+              <Avatar name={selected.name} src={selected.avatar} size="xl" />
               <div>
                 <h3 className="text-xl font-bold text-ink-800">{selected.name}</h3>
                 <p className="text-sm text-ink-500">{selected.department} · Batch {selected.batch}</p>
@@ -195,7 +194,7 @@ export default function ApplicantsPage() {
             </div>
             {matches.find((m) => m.applicantId === selected.studentId) && (
               <div className="rounded-xl bg-brand-50 p-4">
-                <p className="flex items-center gap-2 text-sm font-semibold text-brand-700"><Sparkles className="h-4 w-4" />AI Matching Explanation</p>
+                <p className="flex items-center gap-2 text-sm font-semibold text-brand-700"><Sparkles className="h-4 w-4" />Candidate Match Details</p>
                 <p className="mt-2 text-sm text-brand-600">{matches.find((m) => m.applicantId === selected.studentId)!.reason}</p>
               </div>
             )}

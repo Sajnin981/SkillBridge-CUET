@@ -1,10 +1,10 @@
 import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
-import { ShieldCheck, Users, Sparkles, Target, Brain, Award } from 'lucide-react';
+import { ShieldCheck, Users, FileText, Target, Briefcase, Award } from 'lucide-react';
 
 const values = [
   { icon: ShieldCheck, title: 'Verified & Trusted', description: 'Every student and company is verified to ensure a safe, scam-free ecosystem.' },
-  { icon: Sparkles, title: 'AI-Powered', description: 'Smart matching, resume analysis, and candidate ranking powered by AI.' },
+  { icon: FileText, title: 'Career Tools', description: 'Build your profile, create a resume, and keep track of your opportunities.' },
   { icon: Users, title: 'Community First', description: 'Built exclusively for the CUET community to connect talent with opportunity.' },
   { icon: Award, title: 'Quality Driven', description: 'We focus on meaningful opportunities, not spam postings or fake listings.' },
 ];
@@ -32,12 +32,12 @@ export default function AboutPage() {
 
       <section className="bg-white py-20">
         <div className="container-app">
-          <h2 className="text-center font-display text-3xl font-bold text-ink-900">Our AI Features</h2>
+          <h2 className="text-center font-display text-3xl font-bold text-ink-900">Tools for students and companies</h2>
           <div className="mt-12 grid gap-6 lg:grid-cols-3">
             {[
-              { icon: Brain, title: 'AI Resume Analysis', description: 'Instant resume scoring with strengths, weaknesses, and improvement suggestions.' },
-              { icon: Target, title: 'AI Recommendations', description: 'Personalized opportunity matches with match scores and reasoning.' },
-              { icon: Users, title: 'AI Candidate Matching', description: 'Companies get ranked candidates with match percentages and explanations.' },
+              { icon: FileText, title: 'Resume Builder', description: 'Create a resume PDF from the details in your profile.' },
+              { icon: Target, title: 'Recommendations', description: 'Browse opportunities suggested for your profile.' },
+              { icon: Briefcase, title: 'Application Tracking', description: 'Keep up with application statuses from your dashboard.' },
             ].map((f) => (
               <div key={f.title} className="card p-6">
                 <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-brand-50 text-brand-600"><f.icon className="h-6 w-6" /></div>

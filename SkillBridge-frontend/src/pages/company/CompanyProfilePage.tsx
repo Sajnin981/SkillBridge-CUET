@@ -155,6 +155,17 @@ export default function CompanyProfilePage() {
         )}
       </Card>
 
+      <div className="mt-6 grid gap-6 lg:grid-cols-2">
+        <Card>
+          <CardHeader title="Achievements" />
+          {company?.achievements.length ? <ul className="space-y-2">{company.achievements.map((item) => <li key={item} className="flex gap-2 text-sm text-ink-600"><Trophy className="mt-0.5 h-4 w-4 shrink-0 text-accent-500" />{item}</li>)}</ul> : <p className="text-sm text-ink-500">No achievements added yet.</p>}
+        </Card>
+        <Card>
+          <CardHeader title="Projects and Current Work" />
+          {company?.projects.length ? <div className="space-y-3">{company.projects.map((project) => <div key={project.title}><p className="flex items-center gap-2 text-sm font-semibold text-ink-800"><Briefcase className="h-4 w-4 text-brand-600" />{project.title}</p>{project.description && <p className="mt-1 text-sm text-ink-600">{project.description}</p>}{project.link && <a href={project.link} className="text-xs text-brand-600 hover:underline">{project.link}</a>}</div>)}</div> : <p className="text-sm text-ink-500">No projects added yet.</p>}
+        </Card>
+      </div>
+
       {user && (
         <div className="mt-6">
           <PostFeed
@@ -167,17 +178,6 @@ export default function CompanyProfilePage() {
           />
         </div>
       )}
-
-      <div className="mt-6 grid gap-6 lg:grid-cols-2">
-        <Card>
-          <CardHeader title="Achievements" />
-          {company?.achievements.length ? <ul className="space-y-2">{company.achievements.map((item) => <li key={item} className="flex gap-2 text-sm text-ink-600"><Trophy className="mt-0.5 h-4 w-4 shrink-0 text-accent-500" />{item}</li>)}</ul> : <p className="text-sm text-ink-500">No achievements added yet.</p>}
-        </Card>
-        <Card>
-          <CardHeader title="Projects and Current Work" />
-          {company?.projects.length ? <div className="space-y-3">{company.projects.map((project) => <div key={project.title}><p className="flex items-center gap-2 text-sm font-semibold text-ink-800"><Briefcase className="h-4 w-4 text-brand-600" />{project.title}</p>{project.description && <p className="mt-1 text-sm text-ink-600">{project.description}</p>}{project.link && <a href={project.link} className="text-xs text-brand-600 hover:underline">{project.link}</a>}</div>)}</div> : <p className="text-sm text-ink-500">No projects added yet.</p>}
-        </Card>
-      </div>
 
       <Modal open={editOpen} onClose={() => setEditOpen(false)} title="Edit Company Profile" size="lg"
         footer={<><Button variant="outline" onClick={() => setEditOpen(false)}>Cancel</Button><Button onClick={handleSave} disabled={saving}>{saving ? 'Saving…' : 'Save changes'}</Button></>}>

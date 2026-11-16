@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
-  ArrowRight, Sparkles, Brain, Target, Users, ShieldCheck, Briefcase, GraduationCap,
+  ArrowRight, Sparkles, Target, Users, ShieldCheck, Briefcase, GraduationCap,
   Search, FileCheck, MessageSquare, TrendingUp, CheckCircle2, Star, Quote, ChevronDown,
   Building2, Trophy, Laptop, FlaskConical, Clock,
 } from 'lucide-react';
@@ -13,7 +13,8 @@ import { Avatar } from '@/components/ui/Avatar';
 import { trustedCompanies, testimonials, categories } from '@/lib/constants';
 import { useEffect, useState } from 'react';
 import { opportunityService } from '@/services/opportunityService';
-import type { Opportunity } from '@/lib/types';
+import type { BackendOpportunityType } from '@/api/types';
+import type { Opportunity, OpportunityType } from '@/lib/types';
 import { faqService, type FAQItem } from '@/services/faqService';
 
 const fadeUp = {
@@ -44,7 +45,7 @@ export default function LandingPage() {
       <Hero opportunities={opportunities} loading={opportunitiesLoading} error={opportunitiesError} />
       <TrustedBy />
       <Features />
-      <AIFeatures />
+      <PlatformFeatures />
       <HowItWorks />
       <Benefits />
       <Categories />
@@ -67,14 +68,14 @@ function Hero({ opportunities, loading, error }: { opportunities: Opportunity[];
         <motion.div variants={stagger} initial="hidden" animate="show" className="mx-auto max-w-3xl text-center">
           <motion.div variants={fadeUp}>
             <Badge tone="brand" className="mb-5 px-3.5 py-1.5 text-sm">
-              <Sparkles className="h-3.5 w-3.5" /> AI-powered recruitment for CUET
+              <Sparkles className="h-3.5 w-3.5" /> Opportunities for the CUET community
             </Badge>
           </motion.div>
           <motion.h1 variants={fadeUp} className="font-display text-4xl font-extrabold leading-tight tracking-tight text-ink-900 sm:text-5xl lg:text-6xl">
             Where <span className="text-brand-600">verified talent</span> meets <span className="text-accent-600">verified opportunities</span>
           </motion.h1>
           <motion.p variants={fadeUp} className="mx-auto mt-6 max-w-2xl text-lg text-ink-500">
-            SkillBridge CUET connects verified CUET students with verified companies. Browse internships, jobs, research, and more — with AI matching that finds the right fit for you.
+            SkillBridge CUET connects verified CUET students with verified companies. Browse internships, jobs, research, and more, and apply directly.
           </motion.p>
           <motion.div variants={fadeUp} className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
             <Link to="/register"><Button size="lg" className="w-full sm:w-auto">Get Started Free <ArrowRight className="h-4 w-4" /></Button></Link>
@@ -83,7 +84,7 @@ function Hero({ opportunities, loading, error }: { opportunities: Opportunity[];
           <motion.div variants={fadeUp} className="mt-6 flex items-center justify-center gap-6 text-sm text-ink-400">
             <span className="flex items-center gap-1.5"><CheckCircle2 className="h-4 w-4 text-success-500" />Free for students</span>
             <span className="flex items-center gap-1.5"><CheckCircle2 className="h-4 w-4 text-success-500" />Verified companies</span>
-            <span className="flex items-center gap-1.5"><CheckCircle2 className="h-4 w-4 text-success-500" />AI-powered</span>
+            <span className="flex items-center gap-1.5"><CheckCircle2 className="h-4 w-4 text-success-500" />Direct applications</span>
           </motion.div>
         </motion.div>
 
@@ -177,24 +178,23 @@ function Features() {
   );
 }
 
-const aiFeatures = [
-  { icon: Brain, title: 'AI Resume Analysis', description: 'Upload your resume and get an instant score with strengths, weaknesses, and improvement suggestions.', tone: 'brand' as const },
-  { icon: Target, title: 'AI Opportunity Recommendation', description: 'Get personalized opportunity matches with match scores and reasons for each recommendation.', tone: 'accent' as const },
-  { icon: Users, title: 'AI Candidate Matching', description: 'Companies get ranked candidates with match percentages and explanations for every applicant.', tone: 'success' as const },
+const platformFeatures = [
+  { icon: Target, title: 'Opportunity Recommendations', description: 'Explore opportunities relevant to your skills and profile.', tone: 'accent' as const },
+  { icon: Users, title: 'Applicant Management', description: 'Review applications, shortlist candidates, and connect with applicants.', tone: 'success' as const },
 ];
 
-function AIFeatures() {
+function PlatformFeatures() {
   return (
     <section className="py-20">
       <div className="container-app">
         <div className="rounded-3xl bg-gradient-to-br from-brand-600 to-brand-800 p-8 lg:p-14">
           <div className="mx-auto max-w-2xl text-center">
-            <Badge tone="neutral" className="bg-white/15 text-white ring-white/20"><Sparkles className="h-3.5 w-3.5" />AI-Powered</Badge>
-            <h2 className="mt-5 font-display text-3xl font-bold text-white sm:text-4xl">Smart matching with AI</h2>
-            <p className="mt-4 text-lg text-brand-100">Three AI features that help students find the right opportunities and companies find the right talent — faster.</p>
+            <Badge tone="neutral" className="bg-white/15 text-white ring-white/20"><Sparkles className="h-3.5 w-3.5" />Platform Features</Badge>
+            <h2 className="mt-5 font-display text-3xl font-bold text-white sm:text-4xl">Tools for your career journey</h2>
+            <p className="mt-4 text-lg text-brand-100">Find opportunities and manage applications in one place.</p>
           </div>
-          <div className="mt-12 grid gap-6 md:grid-cols-3">
-            {aiFeatures.map((f) => (
+          <div className="mt-12 grid gap-6 md:grid-cols-2">
+            {platformFeatures.map((f) => (
               <div key={f.title} className="rounded-2xl bg-white/10 p-6 ring-1 ring-white/15 backdrop-blur-sm transition hover:bg-white/15">
                 <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white/15 text-white">
                   <f.icon className="h-6 w-6" />
@@ -212,7 +212,7 @@ function AIFeatures() {
 
 const steps = [
   { icon: GraduationCap, title: 'Create your profile', description: 'Students register with CUET email. Companies submit their profile for verification.' },
-  { icon: Search, title: 'Discover opportunities', description: 'Browse and search opportunities with advanced filters and AI recommendations.' },
+  { icon: Search, title: 'Discover opportunities', description: 'Browse and search opportunities with advanced filters and recommendations.' },
   { icon: FileCheck, title: 'Apply with one click', description: 'Submit your profile and resume. Track your application status in real time.' },
   { icon: MessageSquare, title: 'Connect & get hired', description: 'Companies shortlist, interview, and message candidates directly on the platform.' },
 ];
@@ -244,7 +244,7 @@ function HowItWorks() {
 
 const studentBenefits = [
   'Free for all CUET students',
-  'AI-powered resume scoring',
+  'Resume builder using your profile details',
   'Personalized opportunity recommendations',
   'Application tracking dashboard',
   'Direct messaging with recruiters',
@@ -253,7 +253,7 @@ const studentBenefits = [
 
 const companyBenefits = [
   'Access to verified CUET talent pool',
-  'AI candidate ranking and matching',
+  'Applicant management tools',
   'Applicant management pipeline',
   'Direct messaging with candidates',
   'Company profile with verification badge',
@@ -281,7 +281,7 @@ function Benefits() {
           <div className="card p-8">
             <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-accent-50 text-accent-600"><Building2 className="h-6 w-6" /></div>
             <h3 className="mt-4 text-xl font-bold text-ink-800">For Companies</h3>
-            <p className="mt-2 text-sm text-ink-500">Hire verified CUET talent with AI-powered matching.</p>
+            <p className="mt-2 text-sm text-ink-500">Hire verified CUET talent and manage applications in one place.</p>
             <ul className="mt-6 space-y-3">
               {companyBenefits.map((b) => (
                 <li key={b} className="flex items-start gap-3 text-sm text-ink-600">
@@ -301,21 +301,49 @@ const categoryIcons: Record<string, typeof Briefcase> = {
   Internship: Briefcase, Job: Building2, Freelancing: Laptop, Research: FlaskConical, Competition: Trophy, Scholarship: GraduationCap, 'Part-time': Clock,
 };
 
+const backendTypesByCategory: Partial<Record<OpportunityType, BackendOpportunityType[]>> = {
+  Internship: ['internship', 'industrial-training'],
+  Job: ['job'],
+  Freelancing: ['freelancing'],
+  Research: ['research'],
+  Competition: ['competition'],
+};
+
 function Categories() {
+  const [countsByType, setCountsByType] = useState<Record<BackendOpportunityType, number> | null>(null);
+  const [countsError, setCountsError] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    opportunityService.getFilterOptions()
+      .then(({ countsByType: counts }) => {
+        if (active) setCountsByType(counts);
+      })
+      .catch(() => {
+        if (active) setCountsError(true);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
   return (
     <section className="bg-white py-20">
       <div className="container-app">
-        <SectionHeader eyebrow="Categories" title="Explore opportunities by type" description="Internships, jobs, research, competitions, scholarships, and more." />
+        <SectionHeader eyebrow="Categories" title="Explore opportunities by type" description="Internships, jobs, freelancing, research, and competitions." />
+        {countsError && <p className="mt-6 text-center text-sm text-danger-600">Opportunity counts are unavailable right now.</p>}
         <div className="mt-14 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {categories.map((c) => {
             const Icon = categoryIcons[c.type] ?? Briefcase;
+            const count = backendTypesByCategory[c.type]?.reduce((total, type) => total + (countsByType?.[type] ?? 0), 0);
             return (
               <Link key={c.type} to="/opportunities" className="card group p-5 transition hover:shadow-card hover:-translate-y-0.5">
                 <div className="flex items-center justify-between">
                   <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-brand-50 text-brand-600 transition group-hover:bg-brand-600 group-hover:text-white">
                     <Icon className="h-5 w-5" />
                   </div>
-                  <span className="text-sm font-semibold text-ink-400">{c.count}</span>
+                  <span className="text-sm font-semibold text-ink-400">{count ?? '—'}</span>
                 </div>
                 <h3 className="mt-4 text-base font-semibold text-ink-800">{c.type}</h3>
                 <p className="mt-1 text-sm text-ink-500">{c.description}</p>
@@ -401,7 +429,7 @@ function CTA() {
           <h2 className="font-display text-3xl font-bold text-white sm:text-4xl">Ready to bridge the gap?</h2>
           <p className="mx-auto mt-4 max-w-xl text-lg text-brand-100">Join SkillBridge CUET today and connect with verified opportunities and talent.</p>
           <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
-            <Link to="/register"><Button size="lg" className="w-full bg-white text-brand-700 hover:bg-brand-50 sm:w-auto">Get Started Free <ArrowRight className="h-4 w-4" /></Button></Link>
+            <Link to="/register"><Button size="lg" variant="secondary" className="w-full bg-white hover:bg-brand-50 sm:w-auto">Get Started Free <ArrowRight className="h-4 w-4" /></Button></Link>
             <Link to="/login"><Button size="lg" variant="ghost" className="w-full text-white hover:bg-white/10 sm:w-auto">Sign in</Button></Link>
           </div>
         </div>

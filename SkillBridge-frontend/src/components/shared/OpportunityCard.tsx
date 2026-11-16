@@ -4,8 +4,11 @@ import type { Opportunity } from '@/lib/types';
 import { Badge } from '@/components/ui/Badge';
 import { Avatar } from '@/components/ui/Avatar';
 import { Button } from '@/components/ui/Button';
+import { useToast } from '@/components/ui/Toast';
 import { daysLeft, timeAgo } from '@/lib/utils';
-import { useState } from 'react';
+import { normalizeError } from '@/api/axios';
+import { studentService } from '@/services/studentService';
+import { useEffect, useState } from 'react';
 
 const typeTones: Record<string, 'brand' | 'accent' | 'success' | 'warning' | 'danger' | 'neutral' | 'purple'> = {
   Internship: 'brand',
@@ -20,17 +23,38 @@ const typeTones: Record<string, 'brand' | 'accent' | 'success' | 'warning' | 'da
 interface OpportunityCardProps {
   opportunity: Opportunity;
   view?: 'grid' | 'list';
-  onSave?: (id: string) => void;
+  onSave?: (id: string, saved: boolean) => void;
   showApply?: boolean;
 }
 
 export function OpportunityCard({ opportunity, view = 'grid', onSave, showApply = true }: OpportunityCardProps) {
   const [saved, setSaved] = useState(opportunity.saved);
+  const [saving, setSaving] = useState(false);
+  const { toast } = useToast();
   const tone = typeTones[opportunity.type] ?? 'neutral';
 
-  const toggleSave = () => {
-    setSaved(!saved);
-    onSave?.(opportunity.id);
+  useEffect(() => {
+    setSaved(opportunity.saved);
+  }, [opportunity.saved]);
+
+  const toggleSave = async () => {
+    if (saving) return;
+    setSaving(true);
+    try {
+      if (saved) {
+        await studentService.unsaveOpportunity(opportunity.id);
+      } else {
+        await studentService.saveOpportunity(opportunity.id);
+      }
+      const nextSaved = !saved;
+      setSaved(nextSaved);
+      onSave?.(opportunity.id, nextSaved);
+    } catch (error) {
+      const apiError = normalizeError(error);
+      toast({ title: 'Could not update saved opportunities', description: apiError.message, variant: 'error' });
+    } finally {
+      setSaving(false);
+    }
   };
 
   if (view === 'list') {
@@ -54,7 +78,7 @@ export function OpportunityCard({ opportunity, view = 'grid', onSave, showApply 
             </div>
           </div>
           <div className="hidden shrink-0 items-center gap-2 sm:flex">
-            <Button variant="ghost" size="icon" onClick={(e) => { e.preventDefault(); toggleSave(); }}>
+            <Button variant="ghost" size="icon" disabled={saving} onClick={(e) => { e.preventDefault(); void toggleSave(); }}>
               <Bookmark className={`h-4 w-4 ${saved ? 'fill-brand-600 text-brand-600' : ''}`} />
             </Button>
             {showApply && <Button size="sm">{opportunity.applied ? 'Applied' : 'Apply'}</Button>}
@@ -74,7 +98,7 @@ export function OpportunityCard({ opportunity, view = 'grid', onSave, showApply 
             <p className="text-sm text-ink-500">{opportunity.company}</p>
           </div>
         </Link>
-        <button onClick={toggleSave} className="rounded-lg p-1.5 text-ink-400 transition hover:bg-ink-100 hover:text-brand-600">
+        <button onClick={() => { void toggleSave(); }} disabled={saving} aria-label={saved ? 'Remove saved opportunity' : 'Save opportunity'} className="rounded-lg p-1.5 text-ink-400 transition hover:bg-ink-100 hover:text-brand-600 disabled:opacity-50">
           <Bookmark className={`h-4 w-4 ${saved ? 'fill-brand-600 text-brand-600' : ''}`} />
         </button>
       </div>

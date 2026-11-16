@@ -89,7 +89,7 @@ export default function StudentResumePage() {
     aiService.generateResume().then((result) => {
       setGeneratedResumeUrl(result.aiResumeUrl);
       setShared(result.shared);
-      toast({ title: 'AI resume generated', description: 'Review it below before sharing it to your profile.', variant: 'success' });
+      toast({ title: 'Resume generated', description: 'Review it below before sharing it to your profile.', variant: 'success' });
     }).catch(() => toast({ title: 'Could not generate resume', description: 'Complete some profile information and try again.', variant: 'error' })).finally(() => setGenerating(false));
   };
 
@@ -101,7 +101,7 @@ export default function StudentResumePage() {
     const anchor = document.createElement('a');
     anchor.href = url;
     if (download) {
-      anchor.download = 'ai-resume.pdf';
+      anchor.download = 'resume.pdf';
       anchor.click();
     } else {
       window.open(url, '_blank', 'noopener,noreferrer');
@@ -112,7 +112,7 @@ export default function StudentResumePage() {
   const handleShare = () => {
     aiService.shareResume().then(() => {
       setShared(true);
-      toast({ title: 'AI resume shared to profile', variant: 'success' });
+      toast({ title: 'Resume shared to profile', variant: 'success' });
     }).catch(() => toast({ title: 'Could not share resume', variant: 'error' }));
   };
 
@@ -137,15 +137,15 @@ export default function StudentResumePage() {
   return (
     <PageContainer>
       <div className="mb-6">
-        <h2 className="font-display text-2xl font-bold text-ink-800">AI Resume</h2>
+        <h2 className="font-display text-2xl font-bold text-ink-800">Resume Builder</h2>
         <p className="mt-1 text-sm text-ink-500">Generate a professional PDF from your actual profile details, improve it, and choose whether to share it as your CV.</p>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="lg:col-span-2 space-y-6">
           <Card>
-            <CardHeader title="AI Resume" subtitle="Generate a PDF from your current profile data." action={<Button onClick={handleGenerate} disabled={generating}>{generating ? 'Generating…' : 'Generate PDF'}</Button>} />
-            {generatedResumeUrl && <div className="flex flex-wrap items-center gap-3 rounded-xl bg-brand-50 p-4"><FileText className="h-5 w-5 text-brand-600" /><span className="flex-1 text-sm text-brand-700">AI-generated resume ready</span><Button size="sm" variant="outline" onClick={() => openGeneratedResume().catch(() => toast({ title: 'Could not preview resume', variant: 'error' }))}>Preview</Button><Button size="sm" variant="outline" onClick={() => openGeneratedResume(true).catch(() => toast({ title: 'Could not download resume', variant: 'error' }))}>Download</Button>{!shared && <Button size="sm" variant="outline" onClick={handleShare}>Share to Profile</Button>}{shared && <Badge tone="success">Shared</Badge>}</div>}
+            <CardHeader title="Resume" subtitle="Generate a PDF from your current profile data." action={<Button onClick={handleGenerate} disabled={generating}>{generating ? 'Generating…' : 'Generate PDF'}</Button>} />
+            {generatedResumeUrl && <div className="flex flex-wrap items-center gap-3 rounded-xl bg-brand-50 p-4"><FileText className="h-5 w-5 text-brand-600" /><span className="flex-1 text-sm text-brand-700">Resume ready</span><Button size="sm" variant="outline" onClick={() => openGeneratedResume().catch(() => toast({ title: 'Could not preview resume', variant: 'error' }))}>Preview</Button><Button size="sm" variant="outline" onClick={() => openGeneratedResume(true).catch(() => toast({ title: 'Could not download resume', variant: 'error' }))}>Download</Button>{!shared && <Button size="sm" variant="outline" onClick={handleShare}>Share to Profile</Button>}{shared && <Badge tone="success">Shared</Badge>}</div>}
           </Card>
           <Card>
             <CardHeader title="Edit Resume Details" subtitle="These supported profile fields are saved to your student account." action={<Button size="sm" onClick={handleSave} disabled={saving}>{saving ? 'Saving…' : 'Save details'}</Button>} />

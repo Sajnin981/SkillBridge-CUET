@@ -27,6 +27,9 @@ export default function StudentProfilePage() {
   const [profile, setProfile] = useState<StudentProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [sectionEditor, setSectionEditor] = useState<{ section: 'education' | 'experience'; index: number | null } | null>(null);
+  const [educationDraft, setEducationDraft] = useState({ institution: '', degree: '', field: '', startYear: '', endYear: '', grade: '' });
+  const [experienceDraft, setExperienceDraft] = useState({ company: '', position: '', startDate: '', endDate: '', description: '' });
   const [editForm, setEditForm] = useState({ bio: '', phone: '', skills: '', linkedin: '', github: '', facebook: '', portfolio: '', website: '' });
   const fileRef = useRef<HTMLInputElement>(null);
   const avatarRef = useRef<HTMLInputElement>(null);
@@ -130,6 +133,139 @@ export default function StudentProfilePage() {
     });
   };
 
+  const openEducationEditor = (index: number | null = null) => {
+    const education = index === null ? null : profile?.education[index];
+    setEducationDraft({
+      institution: education?.institution || '',
+      degree: education?.degree || '',
+      field: education?.field || '',
+      startYear: education?.start || '',
+      endYear: education?.end || '',
+      grade: education?.grade || '',
+    });
+    setSectionEditor({ section: 'education', index });
+  };
+
+  const openExperienceEditor = (index: number | null = null) => {
+    const experience = index === null ? null : profile?.experience[index];
+    setExperienceDraft({
+      company: experience?.company || '',
+      position: experience?.role || '',
+      startDate: experience?.start || '',
+      endDate: experience?.end || '',
+      description: experience?.description || '',
+    });
+    setSectionEditor({ section: 'experience', index });
+  };
+
+  const saveSection = async () => {
+    if (!profile || !sectionEditor) return;
+    if (sectionEditor.section === 'education') {
+      if (!educationDraft.institution.trim() || !educationDraft.degree.trim()) {
+        toast({ title: 'Institution and degree are required', variant: 'error' });
+        return;
+      }
+      const education = profile.education.map((item) => ({
+        institution: item.institution,
+        degree: item.degree,
+        field: item.field,
+        startYear: item.start,
+        endYear: item.end,
+        grade: item.grade,
+      }));
+      const entry = {
+        institution: educationDraft.institution.trim(),
+        degree: educationDraft.degree.trim(),
+        field: educationDraft.field.trim(),
+        startYear: educationDraft.startYear.trim(),
+        endYear: educationDraft.endYear.trim(),
+        grade: educationDraft.grade.trim(),
+      };
+      if (sectionEditor.index === null) education.push(entry);
+      else education[sectionEditor.index] = entry;
+
+      setSaving(true);
+      try {
+        setProfile(await studentService.updateProfile({ education }));
+        setSectionEditor(null);
+        toast({ title: 'Education saved', variant: 'success' });
+      } catch {
+        toast({ title: 'Could not save education', variant: 'error' });
+      } finally {
+        setSaving(false);
+      }
+      return;
+    }
+
+    if (!experienceDraft.company.trim() || !experienceDraft.position.trim()) {
+      toast({ title: 'Company and role are required', variant: 'error' });
+      return;
+    }
+    const experience = profile.experience.map((item) => ({
+      company: item.company,
+      position: item.role,
+      startDate: item.start,
+      endDate: item.end,
+      description: item.description,
+    }));
+    const entry = {
+      company: experienceDraft.company.trim(),
+      position: experienceDraft.position.trim(),
+      startDate: experienceDraft.startDate.trim(),
+      endDate: experienceDraft.endDate.trim(),
+      description: experienceDraft.description.trim(),
+    };
+    if (sectionEditor.index === null) experience.push(entry);
+    else experience[sectionEditor.index] = entry;
+
+    setSaving(true);
+    try {
+      setProfile(await studentService.updateProfile({ experience }));
+      setSectionEditor(null);
+      toast({ title: 'Experience saved', variant: 'success' });
+    } catch {
+      toast({ title: 'Could not save experience', variant: 'error' });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const deleteSectionEntry = async (section: 'education' | 'experience', index: number) => {
+    if (!profile) return;
+    setSaving(true);
+    try {
+      if (section === 'education') {
+        const education = profile.education
+          .filter((_, itemIndex) => itemIndex !== index)
+          .map((item) => ({
+            institution: item.institution,
+            degree: item.degree,
+            field: item.field,
+            startYear: item.start,
+            endYear: item.end,
+            grade: item.grade,
+          }));
+        setProfile(await studentService.updateProfile({ education }));
+      } else {
+        const experience = profile.experience
+          .filter((_, itemIndex) => itemIndex !== index)
+          .map((item) => ({
+            company: item.company,
+            position: item.role,
+            startDate: item.start,
+            endDate: item.end,
+            description: item.description,
+          }));
+        setProfile(await studentService.updateProfile({ experience }));
+      }
+      toast({ title: `${section === 'education' ? 'Education' : 'Experience'} removed`, variant: 'success' });
+    } catch {
+      toast({ title: `Could not remove ${section}`, variant: 'error' });
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const uploadAvatar = async (file?: File) => {
     if (!file) return;
     setAvatarUploading(true);
@@ -204,42 +340,55 @@ export default function StudentProfilePage() {
                 <Button variant="ghost" size="sm" onClick={deleteResume}><Trash2 className="h-3.5 w-3.5" />Delete</Button>
               </div>
             ) : (
-              <EmptyState icon={<FileText className="h-6 w-6" />} title="No resume uploaded" description="Upload your CV to apply for opportunities and unlock AI recommendations." action={<Button size="sm" onClick={() => fileRef.current?.click()}><Upload className="h-3.5 w-3.5" />Upload Resume</Button>} />
+              <EmptyState icon={<FileText className="h-6 w-6" />} title="No resume uploaded" description="Upload your CV to include it with opportunity applications." action={<Button size="sm" onClick={() => fileRef.current?.click()}><Upload className="h-3.5 w-3.5" />Upload Resume</Button>} />
             )}
           </Card>
 
           <Card>
-            <CardHeader title="Education" />
+            <CardHeader title="Education" action={<Button variant="outline" size="sm" onClick={() => openEducationEditor()}><Plus className="h-3.5 w-3.5" />Add</Button>} />
             {profile?.education && profile.education.length > 0 ? (
               <div className="space-y-3">
                 {profile.education.map((e, i) => (
-                  <div key={i} className="rounded-xl border border-ink-100 p-4">
-                    <p className="text-sm font-semibold text-ink-800">{e.institution}</p>
-                    <p className="text-xs text-ink-500">{e.degree}{e.field && `, ${e.field}`}</p>
-                    <p className="text-xs text-ink-400">{e.start}{e.end && ` — ${e.end}`}</p>
+                  <div key={i} className="flex items-start justify-between gap-3 rounded-xl border border-ink-100 p-4">
+                    <div>
+                      <p className="text-sm font-semibold text-ink-800">{e.institution}</p>
+                      <p className="text-xs text-ink-500">{e.degree}{e.field && `, ${e.field}`}</p>
+                      <p className="text-xs text-ink-400">{e.start}{e.end && ` — ${e.end}`}</p>
+                      {e.grade && <p className="mt-1 text-xs text-ink-500">Grade: {e.grade}</p>}
+                    </div>
+                    <div className="flex shrink-0 gap-1">
+                      <Button variant="ghost" size="sm" onClick={() => openEducationEditor(i)} aria-label={`Edit ${e.institution}`}><Pencil className="h-3.5 w-3.5" /></Button>
+                      <Button variant="ghost" size="sm" onClick={() => deleteSectionEntry('education', i)} disabled={saving} aria-label={`Delete ${e.institution}`}><Trash2 className="h-3.5 w-3.5" /></Button>
+                    </div>
                   </div>
                 ))}
               </div>
             ) : (
-              <EmptyState icon={<GraduationCap className="h-6 w-6" />} title="No education records" description="Add your educational background." />
+              <EmptyState icon={<GraduationCap className="h-6 w-6" />} title="No education records" description="Add your educational background." action={<Button size="sm" onClick={() => openEducationEditor()}><Plus className="h-3.5 w-3.5" />Add education</Button>} />
             )}
           </Card>
 
           <Card>
-            <CardHeader title="Experience" action={<Button variant="outline" size="sm"><Plus className="h-3.5 w-3.5" />Add</Button>} />
+            <CardHeader title="Experience" action={<Button variant="outline" size="sm" onClick={() => openExperienceEditor()}><Plus className="h-3.5 w-3.5" />Add</Button>} />
             {profile?.experience && profile.experience.length > 0 ? (
               <div className="space-y-3">
                 {profile.experience.map((e, i) => (
-                  <div key={i} className="rounded-xl border border-ink-100 p-4">
-                    <p className="text-sm font-semibold text-ink-800">{e.role}</p>
-                    <p className="text-xs text-ink-500">{e.company}</p>
-                    <p className="text-xs text-ink-400">{e.start}{e.end && ` — ${e.end}`}</p>
-                    {e.description && <p className="mt-1 text-xs text-ink-600">{e.description}</p>}
+                  <div key={i} className="flex items-start justify-between gap-3 rounded-xl border border-ink-100 p-4">
+                    <div>
+                      <p className="text-sm font-semibold text-ink-800">{e.role}</p>
+                      <p className="text-xs text-ink-500">{e.company}</p>
+                      <p className="text-xs text-ink-400">{e.start}{e.end && ` — ${e.end}`}</p>
+                      {e.description && <p className="mt-1 text-xs text-ink-600">{e.description}</p>}
+                    </div>
+                    <div className="flex shrink-0 gap-1">
+                      <Button variant="ghost" size="sm" onClick={() => openExperienceEditor(i)} aria-label={`Edit ${e.role}`}><Pencil className="h-3.5 w-3.5" /></Button>
+                      <Button variant="ghost" size="sm" onClick={() => deleteSectionEntry('experience', i)} disabled={saving} aria-label={`Delete ${e.role}`}><Trash2 className="h-3.5 w-3.5" /></Button>
+                    </div>
                   </div>
                 ))}
               </div>
             ) : (
-              <EmptyState icon={<Briefcase className="h-6 w-6" />} title="No experience added" description="Add your work or internship experience." />
+              <EmptyState icon={<Briefcase className="h-6 w-6" />} title="No experience added" description="Add your work or internship experience." action={<Button size="sm" onClick={() => openExperienceEditor()}><Plus className="h-3.5 w-3.5" />Add experience</Button>} />
             )}
           </Card>
 
@@ -265,7 +414,7 @@ export default function StudentProfilePage() {
                 ))}
               </div>
             ) : (
-              <EmptyState icon={<User className="h-6 w-6" />} title="No skills added" description="Add your skills to improve AI matching." />
+              <EmptyState icon={<User className="h-6 w-6" />} title="No skills added" description="Add your skills to receive relevant opportunity recommendations." />
             )}
           </Card>
 
@@ -323,6 +472,37 @@ export default function StudentProfilePage() {
             <Field label="Portfolio URL"><Input value={editForm.portfolio} onChange={(e) => setEditForm({ ...editForm, portfolio: e.target.value })} placeholder="https://your-portfolio.com" /></Field>
           </div>
         </div>
+      </Modal>
+
+      <Modal
+        open={sectionEditor !== null}
+        onClose={() => setSectionEditor(null)}
+        title={`${sectionEditor?.index === null ? 'Add' : 'Edit'} ${sectionEditor?.section === 'education' ? 'education' : 'experience'}`}
+        size="md"
+        footer={<><Button variant="outline" onClick={() => setSectionEditor(null)}>Cancel</Button><Button onClick={saveSection} disabled={saving}>{saving ? 'Saving…' : 'Save'}</Button></>}
+      >
+        {sectionEditor?.section === 'education' ? (
+          <div className="space-y-4">
+            <Field label="Institution *"><Input autoFocus value={educationDraft.institution} onChange={(event) => setEducationDraft({ ...educationDraft, institution: event.target.value })} /></Field>
+            <Field label="Degree *"><Input value={educationDraft.degree} onChange={(event) => setEducationDraft({ ...educationDraft, degree: event.target.value })} /></Field>
+            <Field label="Field of study"><Input value={educationDraft.field} onChange={(event) => setEducationDraft({ ...educationDraft, field: event.target.value })} /></Field>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Field label="Start year"><Input value={educationDraft.startYear} onChange={(event) => setEducationDraft({ ...educationDraft, startYear: event.target.value })} /></Field>
+              <Field label="End year"><Input value={educationDraft.endYear} onChange={(event) => setEducationDraft({ ...educationDraft, endYear: event.target.value })} /></Field>
+            </div>
+            <Field label="Grade"><Input value={educationDraft.grade} onChange={(event) => setEducationDraft({ ...educationDraft, grade: event.target.value })} /></Field>
+          </div>
+        ) : sectionEditor?.section === 'experience' ? (
+          <div className="space-y-4">
+            <Field label="Company *"><Input autoFocus value={experienceDraft.company} onChange={(event) => setExperienceDraft({ ...experienceDraft, company: event.target.value })} /></Field>
+            <Field label="Role *"><Input value={experienceDraft.position} onChange={(event) => setExperienceDraft({ ...experienceDraft, position: event.target.value })} /></Field>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Field label="Start date"><Input value={experienceDraft.startDate} onChange={(event) => setExperienceDraft({ ...experienceDraft, startDate: event.target.value })} /></Field>
+              <Field label="End date"><Input value={experienceDraft.endDate} onChange={(event) => setExperienceDraft({ ...experienceDraft, endDate: event.target.value })} /></Field>
+            </div>
+            <Field label="Description"><Textarea value={experienceDraft.description} onChange={(event) => setExperienceDraft({ ...experienceDraft, description: event.target.value })} /></Field>
+          </div>
+        ) : null}
       </Modal>
     </PageContainer>
   );

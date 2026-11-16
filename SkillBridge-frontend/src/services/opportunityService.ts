@@ -1,5 +1,6 @@
 import { api, type ApiEnvelope, type BackendOpportunity, type BackendApplication, type Pagination } from '@/api/axios';
 import { mapOpportunity } from '@/api/mappers';
+import type { BackendOpportunityType } from '@/api/types';
 import type { Opportunity } from '@/lib/types';
 
 interface PaginatedOpps {
@@ -10,6 +11,7 @@ interface PaginatedOpps {
 export interface OpportunityFilterOptions {
   locations: string[];
   skills: string[];
+  countsByType: Record<BackendOpportunityType, number>;
 }
 
 export const opportunityService = {
@@ -19,6 +21,7 @@ export const opportunityService = {
     location?: string;
     isRemote?: boolean;
     skills?: string[];
+    salaryMin?: number;
     page?: number;
     limit?: number;
     sort?: string;
@@ -28,6 +31,7 @@ export const opportunityService = {
         ...params,
         type: params?.type?.join(','),
         skills: params?.skills?.join(','),
+        salaryMin: params?.salaryMin || undefined,
       },
     });
     return {
@@ -53,7 +57,7 @@ export const opportunityService = {
 
   async getSaved(): Promise<Opportunity[]> {
     const res = await api.get<ApiEnvelope<{ items: BackendOpportunity[] }>>('/student/saved-opportunities');
-    return res.data.data.items.map(mapOpportunity);
+    return res.data.data.items.map((item) => ({ ...mapOpportunity(item), saved: true }));
   },
 
   async getApplied(): Promise<Opportunity[]> {

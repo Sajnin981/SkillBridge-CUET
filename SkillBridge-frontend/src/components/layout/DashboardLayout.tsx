@@ -14,7 +14,7 @@ interface NavItem {
 const studentNav: NavItem[] = [
   { to: '/student', label: 'Dashboard', icon: LayoutDashboard },
   { to: '/student/opportunities', label: 'Browse Opportunities', icon: Briefcase },
-  { to: '/student/recommendations', label: 'AI Recommendations', icon: Award },
+  { to: '/student/recommendations', label: 'Recommendation', icon: Award },
   { to: '/student/applied', label: 'Applied', icon: FileText },
   { to: '/student/saved', label: 'Saved', icon: Bookmark },
   { to: '/student/messages', label: 'Messages', icon: MessageSquare },
@@ -148,8 +148,8 @@ function SidebarContent({ nav, role, onNavigate, onLogout }: { nav: NavItem[]; r
             <Sparkles className="h-4 w-4" />
           </div>
           <div>
-            <p className="text-xs font-semibold text-ink-700">AI Powered</p>
-            <p className="text-[11px] text-ink-400">Smart matching active</p>
+            <p className="text-xs font-semibold text-ink-700">Career tools</p>
+            <p className="text-[11px] text-ink-400">Opportunities and applications</p>
           </div>
         </div>
         <button onClick={onLogout} className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-danger-600 transition hover:bg-danger-50">

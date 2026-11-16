@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Briefcase, FileText, Bookmark, TrendingUp, ArrowRight, Sparkles, Award, Upload } from 'lucide-react';
+import { Briefcase, FileText, Bookmark, TrendingUp, ArrowRight, Sparkles, Award } from 'lucide-react';
 import { PageContainer } from '@/components/layout/DashboardLayout';
 import { StatCard } from '@/components/shared/StatCard';
 import { Card, CardHeader } from '@/components/ui/Card';
@@ -13,6 +13,8 @@ import { applicationService } from '@/services/applicationService';
 import { opportunityService } from '@/services/opportunityService';
 import { aiService } from '@/services/aiService';
 import { notificationService } from '@/services/notificationService';
+import { useToast } from '@/components/ui/Toast';
+import { normalizeError } from '@/api/axios';
 import type { Opportunity, Notification } from '@/lib/types';
 
 const applicationStatusTone: Record<string, 'neutral' | 'success' | 'danger'> = {
@@ -24,14 +26,15 @@ const applicationStatusTone: Record<string, 'neutral' | 'success' | 'danger'> = 
 
 const quickActions = [
   { label: 'Browse Opportunities', icon: Briefcase, to: '/student/opportunities', tone: 'bg-brand-50 text-brand-600' },
-  { label: 'Resume Builder', icon: Upload, to: '/student/resume', tone: 'bg-accent-50 text-accent-600' },
   { label: 'Edit Profile', icon: TrendingUp, to: '/student/profile', tone: 'bg-success-50 text-success-600' },
   { label: 'View Applications', icon: FileText, to: '/student/applied', tone: 'bg-warning-50 text-warning-600' },
 ];
 
 export default function StudentDashboard() {
   const { user } = useAuth();
+  const { toast } = useToast();
   const [applications, setApplications] = useState<{ id: string; status: string; stage: string; date: string }[]>([]);
+  const [savedCount, setSavedCount] = useState(0);
   const [opportunities, setOpportunities] = useState<Opportunity[]>([]);
   const [recommendations, setRecommendations] = useState<{ opportunityId: string; matchScore: number; reason: string }[]>([]);
   const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -51,7 +54,13 @@ export default function StudentDashboard() {
       setNotifications(notifs);
       setLoading(false);
     }).catch(() => setLoading(false));
-  }, [user]);
+    opportunityService.getSaved().then((saved) => {
+      setSavedCount(saved.length);
+    }).catch((error: unknown) => {
+      const apiError = normalizeError(error);
+      toast({ title: 'Could not load saved opportunities', description: apiError.message, variant: 'error' });
+    });
+  }, [user, toast]);
 
   if (loading) {
     return (
@@ -74,7 +83,7 @@ export default function StudentDashboard() {
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard label="Applications" value={applications.length} icon={<FileText className="h-5 w-5" />} tone="brand" />
-        <StatCard label="Saved Jobs" value={0} icon={<Bookmark className="h-5 w-5" />} tone="accent" />
+        <Link to="/student/saved"><StatCard label="Saved Jobs" value={savedCount} icon={<Bookmark className="h-5 w-5" />} tone="accent" /></Link>
         <StatCard label="Recommendations" value={recommendations.length} icon={<Award className="h-5 w-5" />} tone="success" />
         <StatCard label="Notifications" value={notifications.filter((n) => !n.read).length} icon={<TrendingUp className="h-5 w-5" />} tone="warning" />
       </div>
@@ -93,9 +102,9 @@ export default function StudentDashboard() {
       <div className="mt-6 grid gap-6 lg:grid-cols-3">
         <div className="space-y-6 lg:col-span-2">
           <Card>
-            <CardHeader title="AI Recommended Opportunities" subtitle="Matched to your skills and profile" action={<Badge tone="brand"><Sparkles className="h-3 w-3" />AI</Badge>} />
+            <CardHeader title="Recommendations" subtitle="Opportunities matched to your skills and profile" />
             {recommendations.length === 0 ? (
-              <EmptyState icon={<Sparkles className="h-7 w-7" />} title="No recommendations yet" description="Upload your CV and add skills to unlock AI recommendations." action={<Link to="/student/resume"><Button size="sm"><Upload className="h-3.5 w-3.5" />Upload Resume</Button></Link>} />
+              <EmptyState icon={<Sparkles className="h-7 w-7" />} title="No recommendations yet" description="Add skills to your profile to receive relevant opportunity recommendations." action={<Link to="/student/profile"><Button size="sm">Complete Profile</Button></Link>} />
             ) : (
               <div className="grid gap-4 sm:grid-cols-2">
                 {recommendations.slice(0, 4).map((r) => {

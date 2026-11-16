@@ -1,5 +1,5 @@
 import { api, type ApiEnvelope, type BackendCompany, type BackendOpportunity, type BackendStudent, type Pagination } from '@/api/axios';
-import { mapCompany, mapOpportunity } from '@/api/mappers';
+import { mapOpportunity } from '@/api/mappers';
 import type { Opportunity } from '@/lib/types';
 
 interface PaginatedVerifications {
@@ -55,9 +55,24 @@ export const adminService = {
   },
 
   async getPendingVerifications() {
-    const companiesRes = await api.get<ApiEnvelope<PaginatedVerifications>>('/admin/verifications', { params: { role: 'company', status: 'pending' } });
-    const companies = companiesRes.data.data.items.map((c) => ({ ...mapCompany(c as BackendCompany), role: 'company' as const }));
-    return companies;
+    const [companiesRes, studentsRes] = await Promise.all([
+      api.get<ApiEnvelope<PaginatedVerifications>>('/admin/verifications', { params: { role: 'company', status: 'pending' } }),
+      api.get<ApiEnvelope<PaginatedStudents>>('/admin/verifications', { params: { role: 'student', status: 'pending' } }),
+    ]);
+    return {
+      companies: companiesRes.data.data.items.map((company) => ({
+        id: company._id,
+        name: company.companyName,
+        industry: company.industry,
+        location: company.address,
+      })),
+      students: studentsRes.data.data.items.map((student) => ({
+        id: student._id,
+        name: student.fullName,
+        department: student.department,
+        batch: student.batch,
+      })),
+    };
   },
 
   async getPlatformActivity() {

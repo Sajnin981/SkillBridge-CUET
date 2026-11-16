@@ -8,15 +8,67 @@ const { success } = require("../../utils/apiResponse");
 
 const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
+const salaryAmountExpression = {
+  $let: {
+    vars: {
+      salaryMatch: {
+        $regexFind: {
+          input: { $ifNull: ["$salary", ""] },
+          regex: "([0-9][0-9,]*(?:\\.[0-9]+)?)\\s*(k|thousand|lakh|lac)?",
+          options: "i",
+        },
+      },
+    },
+    in: {
+      $let: {
+        vars: {
+          amount: {
+            $convert: {
+              input: {
+                $replaceAll: {
+                  input: { $ifNull: [{ $arrayElemAt: ["$$salaryMatch.captures", 0] }, "0"] },
+                  find: ",",
+                  replacement: "",
+                },
+              },
+              to: "double",
+              onError: 0,
+              onNull: 0,
+            },
+          },
+          unit: {
+            $toLower: { $ifNull: [{ $arrayElemAt: ["$$salaryMatch.captures", 1] }, ""] },
+          },
+        },
+        in: {
+          $multiply: [
+            "$$amount",
+            {
+              $switch: {
+                branches: [
+                  { case: { $eq: ["$$unit", "k"] }, then: 1000 },
+                  { case: { $eq: ["$$unit", "thousand"] }, then: 1000 },
+                  { case: { $in: ["$$unit", ["lakh", "lac"]] }, then: 100000 },
+                ],
+                default: 1,
+              },
+            },
+          ],
+        },
+      },
+    },
+  },
+};
+
 /**
  * GET /api/opportunities
- * Query: type, search, location, isRemote, skills, status, page, limit, sort
+ * Query: type, search, location, isRemote, skills, salaryMin, status, page, limit, sort
  */
 exports.listOpportunities = async (req, res, next) => {
   try {
     const {
       type, search, location, isRemote, skills, status = "open",
-      page = 1, limit = 10, sort = "-createdAt",
+      salaryMin, page = 1, limit = 10, sort = "-createdAt",
     } = req.query;
 
     const filter = { isActive: true };
@@ -34,6 +86,16 @@ exports.listOpportunities = async (req, res, next) => {
       filter.location = new RegExp(`^\\s*${escapeRegex(location.trim())}\\s*$`, "i");
     }
     if (isRemote === "true") filter.isRemote = true;
+
+    if (salaryMin !== undefined) {
+      const minimumSalary = Number(salaryMin);
+      if (!Number.isFinite(minimumSalary) || minimumSalary < 0) {
+        return next(new AppError("Minimum salary must be a non-negative number.", 400));
+      }
+      if (minimumSalary > 0) {
+        filter.$expr = { $gte: [salaryAmountExpression, minimumSalary] };
+      }
+    }
 
     if (skills) {
       const requestedSkills = (Array.isArray(skills) ? skills : String(skills).split(","))
@@ -154,9 +216,13 @@ exports.listOpportunities = async (req, res, next) => {
 exports.getOpportunityFilterOptions = async (_req, res, next) => {
   try {
     const activeFilter = { isActive: true, status: "open" };
-    const [locations, skills] = await Promise.all([
+    const [locations, skills, opportunityCounts] = await Promise.all([
       Opportunity.distinct("location", activeFilter),
       Opportunity.distinct("tags", activeFilter),
+      Opportunity.aggregate([
+        { $match: activeFilter },
+        { $group: { _id: "$type", count: { $sum: 1 } } },
+      ]),
     ]);
 
     const normalizeOptions = (values) => {
@@ -170,9 +236,18 @@ exports.getOpportunityFilterOptions = async (_req, res, next) => {
       return [...normalized.values()].sort((a, b) => a.localeCompare(b));
     };
 
+    const countsByType = Object.fromEntries(OPPORTUNITY_TYPES.map((type) => [type, 0]));
+    opportunityCounts.forEach(({ _id, count }) => {
+      countsByType[_id] = count;
+    });
+
     return success(res, {
       message: "Opportunity filter options",
-      data: { locations: normalizeOptions(locations), skills: normalizeOptions(skills) },
+      data: {
+        locations: normalizeOptions(locations),
+        skills: normalizeOptions(skills),
+        countsByType,
+      },
     });
   } catch (err) {
     next(err);
